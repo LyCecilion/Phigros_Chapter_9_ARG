@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<meta name=" " content="56 75 65 76 35 56 75 63 97 66 67 47 72">
+<title>nihilist</title>
+<style>
+  @font-face {
+    font-family: "Saira Condensed";
+    src: url("SairaCondensed-Regular.ttf") format("truetype");
+    font-weight: 400;
+    font-style: normal;
+    font-display: block;
+  }
+
+  * { box-sizing: border-box; }
+
+  :root {
+    --fs: min(3.36vw, 12vh);
+  }
+
+  html, body {
+    height: 100%;
+    margin: 0;
+    padding: 0;
+  }
+
+  body {
+    background: #000;
+    overflow: hidden;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-family: "Saira Condensed", "Arial Narrow", Arial, sans-serif;
+  }
+
+  .bg {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    background-image: url("https://c9.gaoice.run/background_DISORIENTATION.png");
+    background-repeat: no-repeat;
+    background-size: cover;
+    background-position: center;
+    pointer-events: none;
+  }
+
+  .stage {
+    position: relative;
+    z-index: 1;
+    display: inline-block;
+    font-size: var(--fs);
+    line-height: 1;
+  }
+
+  #tri {
+    position: fixed;
+    inset: 0;
+    z-index: 0;
+    pointer-events: none;
+  }
+  /* hint1: This hint has been destroyed by Chaos  */
+  .slogan {
+    position: relative;
+    margin: 0;
+    font-family: "Saira Condensed", "Arial Narrow", Arial, sans-serif;
+    font-size: calc(var(--fs) * 0.48);
+    font-weight: 400;
+    letter-spacing: 0.08em;
+    white-space: nowrap;
+    color: #fff;
+    text-shadow:
+      0 0 2px rgba(103, 240, 229, 0.95),
+      0 0 5px rgba(103, 240, 229, 0.85),
+      0 0 10px rgba(103, 240, 229, 0.55),
+      0 0 16px rgba(103, 240, 229, 0.30);
+    cursor: pointer;
+    user-select: none;
+    -webkit-user-select: none;
+    outline: none;
+  }
+   
+  .toast {
+    position: fixed;
+    left: 50%;
+    top: calc(50% + var(--fs) * 1.7);
+    transform: translateX(-50%);
+    z-index: 2;
+    font-family: "Saira Condensed", "Arial Narrow", Arial, sans-serif;
+    font-size: calc(var(--fs) * 0.3);
+    letter-spacing: 0.35em;
+    color: rgba(255, 255, 255, 0.8);
+    opacity: 0;
+    transition: opacity 0.35s ease;
+    pointer-events: none;
+    user-select: none;
+    white-space: nowrap;
+  }
+
+  .toast.show {
+    opacity: 1;
+  }
+
+  @media (orientation: portrait) {
+    :root {
+      --fs: min(3.36vh, 12vw);
+    }
+
+    html {
+      overflow: hidden;
+      height: 100%;
+    }
+
+    body {
+      position: fixed;
+      top: 0;
+      left: 100vw;
+      width: 100vh;
+      height: 100vw;
+      transform: rotate(90deg);
+      transform-origin: top left;
+    }
+  }
+</style>
+</head>
+<body>
+  <div class="bg"></div>
+  <canvas id="tri"></canvas>
+  <div class="stage">
+    <h1 class="slogan" id="slogan" tabindex="0" role="button">In what sense, exactly,​‌‍​‌​‍‌‌‌‍​​‌‍​​​‍​‌‍​‌​​ do we "truly" inhabit the "world"?</h1>
+  </div>
+  <div class="toast" id="toast" aria-live="polite"></div>
+
+  <script type="30290fab4917bd6529d03005-text/javascript">
+    (function () {
+      const slogan = document.getElementById('slogan');
+      const toast = document.getElementById('toast');
+      let hideTimer;
+
+      function flash(ms) {
+        toast.classList.add('show');
+        clearTimeout(hideTimer);
+        hideTimer = setTimeout(() => toast.classList.remove('show'), ms || 1200);
+      }
+
+      async function copyText(text) {
+        try {
+          if (navigator.clipboard && window.isSecureContext) {
+            await navigator.clipboard.writeText(text);
+            return true;
+          }
+        } catch (e) { }
+
+        const ta = document.createElement('textarea');
+        ta.value = text;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'fixed';
+        ta.style.top = '-1000px';
+        ta.style.opacity = '0';
+        document.body.appendChild(ta);
+        ta.select();
+        ta.setSelectionRange(0, ta.value.length);
+        let ok = false;
+        try { ok = document.execCommand('copy'); } catch (e) { ok = false; }
+        ta.remove();
+        return ok;
+      }
+
+      async function handleCopy() {
+        const ok = await copyText(slogan.textContent);
+        toast.textContent = ok ? 'Copied' : 'Copy failed';
+        flash(ok ? 1200 : 2200);
+      }
+
+      slogan.addEventListener('click', handleCopy);
+
+      slogan.addEventListener('keydown', (e) => {
+        if (e.key === 'Enter' || e.key === ' ' || e.key === 'Spacebar') {
+          e.preventDefault();
+          handleCopy();
+        }
+      });
+
+      const triCanvas = document.getElementById('tri');
+      const tctx = triCanvas.getContext('2d');
+      let triW = 0, triH = 0;
+      let isPortrait = false;
+      const TRI_SPEED = 63;
+      const TRI_SPEED_LANDSCAPE = 72;
+      const TRI_SCALE_PORTRAIT = 0.75;
+      const TRI_SCALE_LANDSCAPE = 0.8;
+
+      function resizeTri() {
+        isPortrait = window.innerHeight > window.innerWidth;
+        triW = triCanvas.width = isPortrait ? window.innerHeight : window.innerWidth;
+        triH = triCanvas.height = isPortrait ? window.innerWidth : window.innerHeight;
+      }
+      resizeTri();
+      window.addEventListener('resize', resizeTri);
+
+      const tris = [];
+
+      function spawnTri() {
+        const h0 = 15 + Math.random() * 15;
+        const scale = isPortrait ? TRI_SCALE_PORTRAIT : TRI_SCALE_LANDSCAPE;
+        const h = h0 * scale;
+        const side = h * 2 / Math.sqrt(3);
+        const dir = Math.random() < 0.5 ? 1 : -1;
+        tris.push({
+          x: dir > 0 ? -side : triW + side,
+          y: triH * (Math.random() + Math.random()) / 2,
+          h0: h0,
+          side: side,
+          h: h,
+          up: true,
+          dir: dir,
+          speed: isPortrait ? TRI_SPEED : TRI_SPEED_LANDSCAPE,
+          alpha: 0.18 + Math.random() * 0.2
+        });
+      }
+      // hint2: What elements you have obtained cannot be directly used. Observe encryption rules and remove any interference from them
+      let triLast = performance.now();
+      let triNextSpawn = triLast + 150;
+
+      function triFrame(now) {
+        const dt = Math.min((now - triLast) / 1000, 0.1);
+        triLast = now;
+
+        const curSpeed = isPortrait ? TRI_SPEED : TRI_SPEED_LANDSCAPE;
+        const curScale = isPortrait ? TRI_SCALE_PORTRAIT : TRI_SCALE_LANDSCAPE;
+        const spawnGap = (triW + 80) / curSpeed * 1000 / 30;
+        if (now >= triNextSpawn) {
+          if (tris.length < 30) {
+            spawnTri();
+          }
+          triNextSpawn = now + spawnGap * (0.8 + Math.random() * 0.4);
+        }
+
+        tctx.clearRect(0, 0, triW, triH);
+        for (let i = tris.length - 1; i >= 0; i--) {
+          const t = tris[i];
+          t.speed = curSpeed;
+          t.h = t.h0 * curScale;
+          t.side = t.h * 2 / Math.sqrt(3);
+          t.x += t.speed * t.dir * dt;
+          if (t.x > triW + t.side || t.x < -t.side) {
+            tris.splice(i, 1);
+            continue;
+          }
+          const half = t.side / 2;
+          tctx.beginPath();
+          if (t.up) {
+            tctx.moveTo(t.x, t.y - t.h / 2);
+            tctx.lineTo(t.x + half, t.y + t.h / 2);
+            tctx.lineTo(t.x - half, t.y + t.h / 2);
+          } else {
+            tctx.moveTo(t.x, t.y + t.h / 2);
+            tctx.lineTo(t.x + half, t.y - t.h / 2);
+            tctx.lineTo(t.x - half, t.y - t.h / 2);
+          }
+          tctx.closePath();
+          tctx.fillStyle = 'rgba(255, 255, 255, ' + t.alpha + ')';
+          tctx.fill();
+        }
+
+        requestAnimationFrame(triFrame);
+      }
+      requestAnimationFrame(triFrame);
+    })();
+  </script>
+  <script src="../code-dialog.js" type="30290fab4917bd6529d03005-text/javascript"></script>
+<script src="/cdn-cgi/scripts/7d0fa10a/cloudflare-static/rocket-loader.min.js" data-cf-settings="30290fab4917bd6529d03005-|49" defer></script><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a43a00350dad37b0',t:'MTc5MDg0MjMzMA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script><script type="module" src="https://static.cloudflareinsights.com/beacon.min.js/v31edd6df95cf4e85bb4c19e7a9bdbcba1788362987495" integrity="sha512-iIg7k2xntmwu6/uSb5tpc/hySgZc4eoL31yB29W6tJFo2akwjPWcEqnCEdJvGexCL0KEQwVYv5BlowfhVz26hg==" data-cf-beacon='{"version":"2024.11.0","token":"65b956abb4ba4ad4b434f9c6fcec8ff6","r":1,"spa":2}' crossorigin="anonymous"></script>
+</body>
+</html>

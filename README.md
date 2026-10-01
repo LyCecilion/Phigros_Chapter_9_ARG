@@ -62,7 +62,7 @@
 
 这三句均出自 [T. S. Eliot（托马斯·斯特恩斯·艾略特）](https://en.wikipedia.org/wiki/T._S._Eliot)的诗 [*East Coker*（《东科克》）](https://en.wikipedia.org/wiki/East_Coker_(poem))，是其诗集 [*Four Quartets*《四个四重奏》](https://en.wikipedia.org/wiki/Four_Quartets) 的第二篇。
 
-与视频公开同时地，D.O.M.E. 在林泊百科[「谜题保管所:孤舟」](https://wiki.pigeon-games.com/index.php?title=%E8%B0%9C%E9%A2%98%E4%BF%9D%E7%AE%A1%E6%89%80:%E5%AD%A4%E8%88%9F)中添加内容「Solivault」：
+在视频公开的同时，D.O.M.E. 在林泊百科[「谜题保管所:孤舟」](https://wiki.pigeon-games.com/index.php?title=%E8%B0%9C%E9%A2%98%E4%BF%9D%E7%AE%A1%E6%89%80:%E5%AD%A4%E8%88%9F)中添加内容「Solivault」：
 
 ![林泊百科「谜题保管所:孤舟」](/assets/stage_i/solivault_limbo.png)
 
@@ -78,7 +78,7 @@ https://wiki.pigeon-games.com/WERJETZTALLEINISTWIRDESLANGEBLEIBEN
 
 ![Solivault.png](/assets/stage_i/Solivault.png)
 
-也免得图片中隐约包含两个角色，其上半部分做了黑暗处理。查看该页面的 HTML 源码，我们发现了这样的 JavaScript 逻辑：
+页面的图片中隐约包含两个角色，其上半部分做了黑暗处理。查看该页面的 HTML 源码，我们发现了这样的 JavaScript 逻辑：
 
 ```javascript
 const stage = document.getElementById('stage');
@@ -265,10 +265,10 @@ Image.fromarray(m).save(out)
 print(f"{p.name} {a.shape[1]}x{a.shape[0]} → {out.name}")
 ```
 
-该脚本存放于 [fft_view.py](/artifacts/stage_ii/WERJETZTALLEINISTWIRDESLANGEBLEIBEN/fft_view.py)。脚本读入图片并转为灰度图（L 模式），并转成 float 数组，随后对其作 2D 快速 Fourier 变换、中心化和对数压缩动态范围，随后归一化到 0\~255 并转成 8 位无符号整数，最终输入为 PNG 图片。这里：
+该脚本存放于 [fft_view.py](/artifacts/stage_ii/WERJETZTALLEINISTWIRDESLANGEBLEIBEN/fft_view.py)。脚本读入图片并转为灰度图（L 模式），并转成 float 数组，随后对其作 2D 快速 Fourier 变换、中心化和对数压缩动态范围，归一化到 0\~255 并转成 8 位无符号整数，最终输出为 PNG 图片。这里：
 
 1. `fft2` 计算出的结果默认将零频（直流分量，即图片的平均亮度）放在了数组的四个角落。默认情况下，低频在四个角落会使得输出的图片散乱。我们使用 `fftshift` 做一次象限对调，将零频移动到了图像的正中心，这样画出的频谱图将呈现出中心对称，使人能更容易看出隐藏的信息。
-2. 最后，我们对输出作 `np.log1p(...)` 归一化，这即 $\ln(1 + x)$，它对输出做了一次动态范围对数压缩，将微弱的细节提亮，显露出隐藏在频域中的图案。
+2. 最后，我们对输出作 `np.log1p(...)`，这即 $\ln(1 + x)$，它对输出做了一次动态范围对数压缩，将微弱的细节提亮，显露出隐藏在频域中的图案；随后再做一次线性归一化，将幅值映射到 $[0, 255]$ 并转成 8 位无符号整数，以便保存为 PNG 图片。
 
 处理后我们得到了 `start.layer1.fft.png`：
 
@@ -307,7 +307,7 @@ If you've made it this far but have no idea how to proceed, visit Bilibili and b
 > 对于非中文的玩家：审查期间，我们发现中国大陆的玩家和海外玩家之间存在信息差，可能会让你们卡在谜题上。<br/>
 > 如果走到这一步，但你不知道怎么办，可以去哔哩哔哩上看 Phigros 官方的历史投稿，早期的谜题或许会给你灵感。
 
-并在后文中得到了一串 [JavaScript 脚本](/artifacts/stage_ii/outside_the_birdcage/711f2f61b954952722263a03-text.js)。分析后发现，该脚本的 `fingerprint()` 函数收集了大量的浏览器和环境信息，包括 User-Agent、语言、平台、硬件并发数、设备内存、触摸点数、屏幕尺寸、色彩深度、`devicePixelRatio`、时区、`Intl` 时区、Canvas 绘制文字后的 `toDataURL()` 尾部、WebGL 的 vendor/renderer 信息等，最后将这些内容拼成一个字符串，用不同的 seed 做四次 FNV 哈希（`fnv(str, seed)`），拼成 32 位十六进制字符串（`hex8(n)`）。
+并在后文中得到了一个 [JavaScript 脚本](/artifacts/stage_ii/outside_the_birdcage/711f2f61b954952722263a03-text.js)。分析后发现，该脚本的 `fingerprint()` 函数收集了大量的浏览器和环境信息，包括 User-Agent、语言、平台、硬件并发数、设备内存、触摸点数、屏幕尺寸、色彩深度、`devicePixelRatio`、时区、`Intl` 时区、Canvas 绘制文字后的 `toDataURL()` 尾部、WebGL 的 vendor/renderer 信息等，最后将这些内容拼成一个字符串，用不同的 seed 做四次 FNV 哈希（`fnv(str, seed)`），拼成 32 位十六进制字符串（`hex8(n)`）。
 
 随后，网页从服务器同步文本：`syncFromServer()` 使用上面计算得到的指纹请求同源接口 `api.php?fp=<fingerprint>`，解析其得到的 JSON 并显示响应传回的字符串。例如，我们打开 F12 开发人员工具的 Network 标签页，可以看到一次请求：
 
@@ -337,7 +337,7 @@ R#m6Aya#N=$S
 u~D4wBeN3i_O
 ```
 
-我们注意到，这 13 个字符串的末尾均为大写字母；`rev | sort` 后得到不重复的字母 `D`, `E`, `I`, `N`, `O`, `P`, `S`。注意到这 13 个字母恰好可以构成单词 `DISPOSSESSION`，我们在前文的 [Stage I](#stage-i9-月-5-日起) 中获得过这个单词——但由于有重复字母，顺序不能被唯一确定。再次注意到 13 个字符串的开头：`$`, `1`, `A`, `?`, `C`, `E`, `G`, `I`, `N`, `O`, `R`, `u`，其中的大写字母恰好可以构成单词 `IGNORANCE`，我们按照这样的顺序排列 13 个字符串，最终得到了矩阵
+我们注意到，这 13 个字符串的末尾均为大写字母；`rev | sort` 后得到 7 个不重复的字母 `D`, `E`, `I`, `N`, `O`, `P`, `S`。注意到这 13 个尾字母恰好可以构成单词 `DISPOSSESSION`，我们在前文的 [Stage I](#stage-i9-月-5-日起) 中获得过这个单词——但由于有重复字母，顺序不能被唯一确定。再次注意到 13 个字符串的开头，共出现了 12 个不重复的字母：`$`, `1`, `A`, `?`, `C`, `E`, `G`, `I`, `N`, `O`, `R`, `u`，其中的大写字母恰好可以构成单词 `IGNORANCE`，我们按照这样的顺序排列 13 个字符串，最终得到了矩阵
 
 ```text
 ?aT?~!4*jK^D
@@ -367,7 +367,7 @@ https://c9.gaoice.run/background-7-7.png
 
 ![空三角形](/assets/stage_ii/limbo_wiki/empty_triangle.png)
 
-但存在这样的三角形，其中大的三角形内有一个略小的三角形描边，且三角形的中间位置还有小的实心三角形。这样的三角形共有 3 个，下面的这张图片展示了其中 2 个。图片拉高了 Gamma 值，使得这样的三角形更加清晰，这 2 个三角形位于图片的左侧和右侧：
+但存在这样的三角形，其中大的三角形内有一个略小的三角形描边，且三角形的中间位置还有小的实心三角形。这样的三角形共有 4 个，下面的这张图片展示了其中 2 个。图片拉高了 Gamma 值，使得这样的三角形更加清晰，这 2 个三角形位于图片的左侧和右侧：
 
 ![不同的三角形](/assets/stage_ii/limbo_wiki/filled_triangle.png)
 
@@ -577,7 +577,7 @@ print("".join(rev[divmod(n - ks[i % len(ks)], 10)] for i, n in enumerate(ct)))
 
 ![JUSTENGAGEWTH 页面截图](/assets/stage_ii/limbo_wiki/justengagewth.png)
 
-尝试点击页面中间的文本进行复制，但，我们注意到，复制得到的文本并非显示的文本。
+尝试点击页面中间的文本进行复制，但我们注意到，复制得到的文本并非显示的文本。
 
 下载 [HTML 源码](/artifacts/stage_ii/JUSTENGAGEWTH/JUSTENGAGEWTH.html)，查看得到其中的第 2 行
 

@@ -1,0 +1,53 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="robots" content="noindex, nofollow">
+<link rel="icon" href="data:,">
+<title>Solivault</title>
+<style>html{background:#020308}</style>
+<script data-cfasync="false">
+(function () {
+  var mode = '';
+  function put(file) {
+    return fetch(file, { cache: 'no-store' }).then(function (r) { return r.text(); }).then(function (h) {
+      if (!h) return false;
+      mode = file;
+      document.open(); document.write(h); document.close();
+      return true;
+    }).catch(function () { return false; });
+  }
+  var timer = 0;
+  function arm(s) {
+    if (timer) { clearTimeout(timer); timer = 0; }
+    var next = 0;
+    if (s && s.sound === true && s.close_at > 0) next = s.close_at;
+    if (s && s.sound === false && s.sound_enabled !== false && s.open_at > 0 && s.open_at * 1000 > Date.now()) next = s.open_at;
+    if (next > 0) {
+      var ms = next * 1000 - Date.now() + 800;
+      if (ms > 0 && ms < 2147000000) timer = setTimeout(function () { location.replace(location.pathname + location.search + location.hash); }, ms);
+    }
+  }
+  function decide(s) {
+    var file = (s && s.sound === false) ? 'nosong.html' : 'song.html';
+    if (file !== mode) put(file).then(function (ok) { if (!ok && file !== 'song.html') return put('song.html'); });
+    arm(s);
+  }
+  function ask() {
+    return fetch('state.php', { cache: 'no-store' }).then(function (r) { return r.json(); }).catch(function () { return { sound: true }; });
+  }
+  ask().then(decide);
+  document.addEventListener('visibilitychange', function () {
+    if (document.hidden) return;
+    ask().then(function (s) {
+      var want = (s && s.sound === false) ? 'nosong.html' : 'song.html';
+      if (mode && want !== mode) location.replace(location.pathname + location.search + location.hash);
+      arm(s);
+    });
+  });
+})();
+</script>
+</head>
+<body><script>(function(){function c(){var b=a.contentDocument||(a.contentWindow&&a.contentWindow.document);if(b){var d=b.createElement('script');d.innerHTML="window.__CF$cv$params={r:'a410f2280c6cc36d',t:'MTc5MDQxMTgzOA=='};var a=document.createElement('script');a.src='/cdn-cgi/challenge-platform/scripts/jsd/main.js';document.getElementsByTagName('head')[0].appendChild(a);";b.getElementsByTagName('head')[0].appendChild(d)}}if(document.body){var a=document.createElement('iframe');a.height=1;a.width=1;a.style.position='absolute';a.style.top=0;a.style.left=0;a.style.border='none';a.style.visibility='hidden';document.body.appendChild(a);if('loading'!==document.readyState)c();else if(window.addEventListener)document.addEventListener('DOMContentLoaded',c);else{var e=document.onreadystatechange||function(){};document.onreadystatechange=function(b){e(b);'loading'!==document.readyState&&(document.onreadystatechange=e,c())}}}})();</script></body>
+</html>

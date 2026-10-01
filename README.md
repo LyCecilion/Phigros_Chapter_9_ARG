@@ -864,6 +864,176 @@ print("随机生成：", [round(sum(x[i] for x in sims) / len(sims), 1) for i in
 
 ### WER 页面出现的 SSTV
 
-在 9 月 26 日下午左右，玩家发现，先前 WER... 页面在加载后会出现一段音频。
+> [!NOTE]
+> 本段内容由 DeepSeek V4.1 Flash 撰写。
 
-在大约 1 天后，该网页的音频消失。
+9 月 26 日下午左右，玩家发现，先前的 WER... 页面在加载后会自行播放一段音频。大约 1 天后，这段音频下线，页面也恢复成了原先 `start.png` 两图拆分的逻辑。
+
+由于页面已经还原，本节无法现场复现——所依据的页面存档、接口响应、音频与解码结果，均取自玩家复现包 [Michaelwucoc/phi9](https://github.com/Michaelwucoc/phi9) 的 09-25 / 09-26 快照（对应其 `net_dump/`、`solivault_song.wav`、`sstv_img_0.png`）；本节在其基础上做整理、复算与补充分析。
+
+当时访问该页面，得到的已不是内联的拼图脚本，而是一段很短的引导脚本：它向同源请求 `state.php`，再按返回的 `sound` 字段用 `document.write` 注入 `song.html` 或 `nosong.html`，并据 `open_at`、`close_at` 设定定时器，到点自行刷新。
+
+```javascript
+function decide(s) {
+    var file = s && s.sound === false ? "nosong.html" : "song.html";
+    if (file !== mode) {
+        put(file).then(function (ok) {
+            if (!ok && file !== "song.html") return put("song.html");
+        });
+    }
+    arm(s);
+}
+ask().then(decide); // ask() = fetch('state.php', {cache:'no-store'}).then(r => r.json())
+```
+
+`state.php` 的响应是
+
+```json
+{"sound":true,"open":true,"sound_enabled":true,"open_at":0,"close_at":1790931600,"now":1790412010}
+```
+
+其中 `close_at` 换算为 2026-10-02 17:00:00 CST，正是 Solivault 倒计时的终点——「播歌」是一段与倒计时绑定的窗口期内容。
+
+「播歌」状态下注入的 `song.html`（185 KB）内嵌了多个混淆脚本，其中第一个脚本块负责整条音频链路。它同样经过 javascript-obfuscator 处理：字符串表被旋转，字面量被拆成 `"key.php?n=" + "1"` 这样的片段，因此直接反混淆会留下一堆 `_0x129b(idx, key)` 调用（[9.js](/artifacts/stage_ii/SSTV/9.js) 中的 `//decode_error` 就来自这里）。正确做法是先真正执行字符串表函数、解码器与数组旋转 IIFE，再按调用点逐个求值，而不是纯做文本替换；复现脚本见 [deobfuscate.js](/artifacts/stage_ii/SSTV/deobfuscate.js)，反混淆结果见 [9.deobf.js](/artifacts/stage_ii/SSTV/9.deobf.js)。反混淆后，常量表把整套机制写得明明白白：
+
+```javascript
+cMQxY: "key.php?n=1",
+PhYyO: "play.php?id=",
+lIQtN: "ECDH",
+LISHk: "P-256",
+nvVVL: "spki",
+CgbHy: "raw",
+EzXzU: "HKDF",
+vFOhw: "SHA-256",
+QPfsY: "sv-hs",
+qodIq: "HMAC",
+ALKOQ: "finish|",
+NZikd: "key.php?n=2&sid=",
+IyXPB: "&tk=",
+eaEsC: "&pk=",
+kXjkH: "&mac=",
+gipjW: "AES-GCM",
+cMNJU: "decrypt",
+```
+
+整条链路分三步。第一步请求 `key.php?n=1`，服务器下发一次性会话材料：
+
+```json
+{"sid":"b6e37cf9e5f0b60a2462c2beb42b54ea","spki":"MFkwEwYHKoZIzj0CAQYIKoZIzj0DAQcDQgAE…","nonce":"0QCF33JhZECanMLevQD8tg==","au":"https://c9.gaoice.run/Solivault-b41467b9.png","seq":0,"pl":3,"tk":"…"}
+```
+
+`spki` 是服务器临时生成的 P-256 公钥（Base64 编码的 SubjectPublicKeyInfo），`nonce` 是 16 字节随机数，`pl` 是音频分片数（本次为 3），`au` 是封面图地址。第二步按 `pl` 逐片请求 `play.php?id=1..3`，每片返回 `{id, o, f, t}`，其中 `o` 是偏移量、`f` 是 16 字节的 GCM tag、`t` 是密文（均为 Base64）：
+
+```json
+{"id":1,"o":238,"f":"9UriGthTjnoomgBlJpKprKX1mSN1T+UH07SbkiTUYs4=","t":"bLuuLSHW71Ci0nz/bVrsVgg…"}
+```
+
+页面会先把 `1..pl` 洗牌（`function k(b)` 是一个 Fisher–Yates）再依次请求，请求顺序本身不携带信息；但这些分片的 tag 与偏移量随后会参与密钥派生，也就是说密钥与当次分片的内容绑定。
+
+第三步在本地派生会话密钥。客户端临时生成一对 P-256 密钥（`generateKey({name:"ECDH", namedCurve:"P-256"}, true, ["deriveBits"])`），import 服务器公钥后做一次 ECDH，得到 32 字节共享秘密；再以 `nonce` 与前一步各分片的 `f`/`o` 拼出 HKDF 的 salt，用 `info = "sv-hs"` 做一次 HKDF-SHA256，派生 32 字节密钥；接着用这把密钥做 HMAC-SHA256 签 `"finish|" + sid` 得到 `mac`，并把客户端公钥按 `spki` 导出为 `pk`，请求
+
+```text
+key.php?n=2&sid=<sid>&tk=<tk>&pk=<客户端公钥>&mac=<签名>
+```
+
+响应形如
+
+```json
+{"iv":"WzwI4SrQbaTfbSyY","ct":"Vo7PHhI4FMwRObFxDJIvaA3Iw+NIMOYKX5H1ggGn3IJzJTiIkgYq7sR0jXlTa9UY","p":[0,21,11,58,"/+Zxy700USgpeTxzcNpa+lIxEoXGewUZI9pfz3NBcL0="],"t":"6HPxZJfX4NdRLDIJclhxwboDr4XJUwlDuPlEiXhrSMgOJ7LK3IpqGuSscUM462v8zAITnBCzs7WH/Q+NUQ+bFcjnmF/nES9Ccg6kwUfBHzWVMxfzUEouEMfBHJ2gW6Wa0Kn0sEBCj/5jfEoI2a9tZVwAGpY96vEaZeebMfGnwJD/Z6F/bewzETW9E8RbYG1CaZR4r38="}
+```
+
+用同一把 HKDF 密钥以 `iv` 做 AES-GCM 解开 `ct`；再由 `p` 给出的五元组（一个模式编号、两个步进参数、一个偏移量与一段 Base64）派生出最后一把 32 字节密钥。
+
+真正的音频密文并不在这几个接口里，而是藏在封面图 `au` 的 PNG chunk 中：脚本把封面图取回后，从 PNG 签名之后逐块遍历，遇到负载以 `Comment` 开头的 `tEXt` 文本块就把内容收集起来，直到遇上 `IEND` 为止，再把它们拼成完整的字节流（`function n(b)`），用上一步的密钥 AES-GCM 解密，得到 PCM。因为 `tEXt` 是 PNG 合法的辅助块，这张封面图在任何看图软件里都能正常显示，像素与一期 `start.png` 的 part1 完全一致（存档做过像素级比对，相关系数 1.000）——多出来的只是画面之外的文本块，这也解释了「封面图怎么和一期那张一模一样」。最终结果以 `window.__sv = { img, aud }` 暴露给同页脚本，后者用 `AudioContext.decodeAudioData` 解码并循环播放：
+
+```javascript
+(window.__sv.aud || Promise.resolve(null)).then(function (a) {
+    const b = a.buffer.slice(a.byteOffset, a.byteOffset + a.byteLength);
+    d.decodeAudioData(b).then(function (buf) {
+        e = buf;
+        h();
+    });
+});
+```
+
+会话密钥每次访问都会重新协商，且与当次分片绑定，所以同一份密文换个会话就解不开。顺带一提，`key.php` 的响应里还内嵌了一段面向解包者的声明，既强调素材「仅限授权页面在线播放」，也提醒「旧版 writeup 描述的 v0/v1 格式已经废弃」「会话密钥每次访问都会重新生成并过期」——出题人显然早就预见到了解包与写作。`state.php`、`key.php?n=1|2` 与 `play.php?id=1` 的响应原文（转引自 [Michaelwucoc/phi9](https://github.com/Michaelwucoc/phi9) 的 `net_dump/`）见 [state.json](/artifacts/stage_ii/SSTV/state.json)、[key-1.txt](/artifacts/stage_ii/SSTV/key-1.txt)、[key-2.txt](/artifacts/stage_ii/SSTV/key-2.txt)、[play-1.txt](/artifacts/stage_ii/SSTV/play-1.txt)。
+
+因为音频是「解密后喂给 `AudioContext`」的，最省事的抓取办法是在页面里劫持 `decodeAudioData`。用 Playwright 打开页面（附加 `--autoplay-policy=no-user-gesture-required`，以免自动播放被拦截），在页面上下文注入
+
+```javascript
+const orig = AudioContext.prototype.decodeAudioData;
+AudioContext.prototype.decodeAudioData = function (buf, ...rest) {
+    window.__captured = buf.slice(0);
+    return orig.call(this, buf, ...rest);
+};
+```
+
+待页面开始播放后取出 `window.__captured`，即得到完整的解密音频（本文所用的 [solivault_song.wav](/artifacts/stage_ii/SSTV/solivault_song.wav) 即出自上述存档）——44.1 kHz、单声道、16 bit，共 111.356 s。
+
+对这段音频做频谱分析，绝大部分能量都落在 1100–2300 Hz，并且每隔约 **0.428 s** 就出现一根 1200 Hz 的同步脉冲：
+
+![solivault_song.wav 的频谱：① VIS 头；② 前几行扫描；③ 平直的音调线（听感上的「旋律」）；④ 1200 Hz 以下只剩咔哒声（听感上的「咯噔」）](/artifacts/stage_ii/SSTV/spectrogram.png)
+
+肉耳听这段音频，会听到两样东西：一段单调重复的「旋律」，和一层规律的「咯噔咯噔」。它们其实是同一张图的两面——图中第 ③ 栏那些平直的音调线，是画面里成片同色的区域被逐行扫过的结果；第 ④ 栏那一排竖向条纹，则是每一行起始处的咔哒（实测它的包络严格锁在行周期 0.4286 s 上，在非整数倍的 0.5 s 处自相关只有 0.014）。
+
+所以那段「旋律」确实是音乐，只是它并非另配的一轨——它本身就是这张立绘：每一行的音高，就是那一行的明暗。把解码得到的立绘用同一模式重新编码成音频，再逐行取 G 分量的平均频率，与原音频的相关度是 **0.892**，即音高轮廓一致；换句话说，把这段音频"弹"出来，等于把这张画逐行唱了一遍。
+
+不过要说明的是，这只是一次「音频 → 图 → 音频」的有损往返：解出的图只有 8 位精度，而原信号在 1500–2300 Hz 之外还有大量持续时间不到 1 ms 的切换毛刺（实测 A 中 2400 Hz 以上共 49 段、中位时长仅 0.98 ms，重编码版则一段都没有），这些都无法被图保留；解码器又要从信号里自估黑/白电平，会被这些毛刺带偏，于是重编码版的频率映射被轻微压缩（第 25 百分位 1754 Hz vs 原音频 1818 Hz）。听感上就表现为「同一段旋律，但有些音偏高、高音上不去，音色也更沙哑」——这是往返有损的结果。
+
+另外，肉耳听到的「旋律节奏」和「咯噔节奏」并不是同一个拍子：前者恰好是后者的三倍。SSTV 的每一行其实被切成 G、B、R 三段（各约 0.138 s，中间夹 9 ms 的 1500 Hz 黑），所以每「咯噔」一次，旋律内部已经走了三步。实测「音高变化活动」的自相关在 0.1400 s 与 0.4290 s 处都有峰（+0.33 / +0.36），而在 150、130、120、100 BPM 这些常见曲速网格上几乎为零；纯 SSTV 重建版给出的是同一份指纹。
+
+> [!NOTE]
+> **一个尚无定论的分歧：这段「旋律」究竟是什么（DeepSeek V4.1 Flash vs 零音）**
+>
+> 这里不替对方下结论，两边的主张原样并列：
+>
+> - DeepSeek V4.1 Flash 认为，这段旋律不存在独立的第二层，它就是画面本身的扫描。理由有两点：解码器只看主频，若另有一条更轻的旋律叠在音频里，它既不会改变像素，也就无法在「图 → 音频」的重建中复现；而零音在两个低频片段（原音频，以及由解出的图重新合成的纯 SSTV 版）里同时听到了同一条旋律，说明这条旋律来自主频，也就是画面。
+> - 零音（提出者）认为，出题方很可能把一段 MIDI 旋律与图片的 SSTV 混成了一个 `.wav`；因此我们解出的图天然带着那条旋律的影响，像盲水印一样，仅靠「图 → 音频」的往返无法证伪。零音并凭听感判断，这是一段音游曲。
+>
+> 两边一致的只有一点：旋律确实存在，也确实好听。分歧在于「它是画面扫描的副产品，还是另有一次作曲」。
+>
+> 判定已约定：**2026-10-02 17:00 隐藏曲公开后**，抽出 SSTV 的音高轮廓与隐藏曲主旋律的音高轮廓做对齐比对。若对得上，则本节结论改写。
+
+它之所以能装下一张图，是因为用上了 SSTV（Slow-scan television，慢扫描电视）——业余无线电时代留下的一种模拟图像传输方式。协议本身只有三条：
+
+1. 一行一行地发：把图像按扫描行切开，一次只发一行；
+2. 亮度等于瞬时频率：像素的明暗映射成 1500–2300 Hz 之间的一个频率（越亮越高），于是一行就是一串连续滑动的音调；
+3. 用同步脉冲对齐：每行开头先发一段定长的 1200 Hz 脉冲，接收端据此判断「新的一行从这里开始」，再按模式规定的节奏把这一行切回像素。
+
+第 2 步把二维的图像压成了一维的声音，于是整张图就变成了一段纯音频。它不需要任何数字封装——只要能传声音（短波电台、电话线、录像带音轨，乃至网页里播放的一段「歌」）就能把图送过去。而它之所以不容易被发现，恰恰因为它听起来不像数据：扫描出来的只是电子味儿的啸叫与咔哒，人的第一反应是「噪声」或「音效」，而不是「这里面有张图」；载体也是中性的——页面把它当「歌」播、玩家当「歌」听，没有任何东西提示这层含义。这与第一阶段把字藏进 PNG 其实是同一类做法，只是换成了声音。
+
+要还原它，得先认对模式。SSTV 有几十种模式，行时长、同步脉宽、颜色分量顺序各不相同，认错就会解出一张重影或斜切的废图；好在每段传输开头的 VIS（Vertical Interval Signaling）头会自报家门：
+
+| 段 | 时长 | 频率 |
+| --- | --- | --- |
+| 引导音 | 300 ms | 1900 Hz |
+| 间隔 | 10 ms | 1200 Hz |
+| 引导音 | 300 ms | 1900 Hz |
+| 起始位 | 30 ms | 1200 Hz |
+| 7 个数据位 + 1 个奇偶校验位 | 每位 30 ms | 1100 Hz（记作 1）/ 1300 Hz（记作 0） |
+| 停止位 | 30 ms | 1200 Hz |
+
+按低位在前读出数据位，得到 VIS 码 60，对应模式 Scottie S1：每帧 320×256，逐行依次发送 G、B、R 三个分量，行时长约 0.428 s。256 行合计约 109.7 s，与音频总长相符；把音频倒放则解不出第二张图。
+
+按 Scottie S1 解码，得到一张 320×256 的角色立绘：
+
+![SSTV 解码结果](/artifacts/stage_ii/SSTV/sstv_img_0.png)
+
+画面主体是一名深色长发、黄绿色眼睛的角色，着浅色服装，应当是 Phigros 角色「鸠」；画面上大面积的横向 glitch 噪点，是原图风格与传输噪声叠加的结果。解码可以直接用 [`sstv`](https://github.com/unexcellent/sstv-py)（Rust [`sstv`](https://crates.io/crates/sstv) crate 的 Python 封装），它会自己从 VIS 头识别模式：
+
+```python
+import sstv
+for image in sstv.decode_from_wav("solivault_song.wav"):
+    print(image.size, image.info)  # (320, 256) {'sstv_mode': Mode.SCOTTIE_1, 'sstv_complete': False}
+    image.save("sstv_decoded.png")
+```
+
+它给出的正是上图，并报 `sstv_mode = Mode.SCOTTIE_1`、`sstv_complete = False`（最后一行扫描未完整解出）。作为交叉验证，本文另附了一份零依赖的最小实现 [sstv_decode.py](/artifacts/stage_ii/SSTV/sstv_decode.py)（只用 `numpy` 与 `Pillow`），它独立复现了「VIS 60」这一步判定：
+
+```bash
+python3 sstv_decode.py solivault_song.wav sstv_decoded.png
+# VIS 60 -> Scottie S1
+# wrote sstv_decoded.png (320x256)
+```
+
+频谱图由 [spectrogram.py](/artifacts/stage_ii/SSTV/spectrogram.py) 生成。

@@ -30,13 +30,17 @@
 >
 > 视频制作：Pigeon Animation Team (汉堡、AiLANE、海产)
 
-对于简介「？」的前 2 行，注意到其使用了 Chaocipher（混沌密码），将第 1 行作密文，第 2 行作 left disk 和 right disk 的字母表，解密得到
+对于简介「？」的前 2 行，注意到其使用了 Chaocipher（混沌密码）。
+
+<!-- TODO: 在这里补一段 Chaocipher 的介绍。 -->
+
+于是，我们将第 1 行作密文，第 2 行作 left disk 和 right disk 的字母表，解密得到
 
 > WERJETZTALLEINISTWIRDESLANGEBLEIBEN
 
 分词后得到一串德语 „Wer jetzt allein ist, wird es lange bleiben“，意为「如今独自一人的人，将长久如此」。这句出自奥地利诗人 *Rainer Maria Rilke*（里尔克）的诗 [*Herbsttag*（《秋日》）](https://de.wikipedia.org/wiki/Herbsttag)。
 
-而对于简介「？」的第 3 行，注意到使用了 Atbash Cipher（Atbash 密码），解密后可以得到：
+而对于简介「？」的第 3 行，注意到使用了 Atbash Cipher（Atbash 密码）。<!-- 在这里补一段 Atbash Cipher 的介绍。 -->解密后可以得到：
 
 > Only Chaos can shatter the mirage that plagues the ignorant Fool.
 
@@ -47,6 +51,10 @@
 - 1:19 起，视频左上角显示「SIG : MIRAGE」，右上角显示「CH-7」，下方显示「FVB TBZA NV IF H DHF DOPJO PZ AOL DHF VM PNUVYHUJL」；
 - 1:28 起，视频左上角显示「SIG : CHAOS」，右上角显示「CH-7」，下方显示「FVB TBZA NV IF H DHF DOPJO PZ AOL DHF VM PNUVYHUJL」；
 - 1:39 起，视频左上角显示「SIG : TRUTH」，右上角显示「CH-3」，下方显示「BRX PXVW JR WKURXJK WKH ZDB LQ ZKLFK BRX DUH QRW」。
+
+![1:23 处的 PV 画面（SIG : MIRAGE）](/artifacts/stage_i/pv_1m23s_sig_mirage.png)
+![1:29 处的 PV 画面（SIG : CHAOS）](/artifacts/stage_i/pv_1m29s_sig_chaos.png)
+![1:40 处的 PV 画面（SIG : TRUTH）](/artifacts/stage_i/pv_1m40s_sig_truth.png)
 
 不难注意到这是 Caesar Cipher（凯撒密码），偏移量即 `CH-?` 中的数字。反向偏移后可以得到明文：
 
@@ -111,11 +119,61 @@ https://ch9.oss-cn-beijing.aliyuncs.com/Solivault.png
 
 另外，此时已经有玩家发现视频中「SIG : TRUTH」段的 BGM 疑似是 *816ThreeNumbers* 的歌曲 *True Home, True World*，但并没有确证。
 
+![True Home, True World 的哔哩哔哩视频截图](/assets/stage_i/thtw_screenshot.png)
+
 ## Stage II（9 月 25 日起）
+
+9 月 25 日晚 17:00，Phigros 更新了 4.0.0 版本。
 
 ### 第一部分歌曲解锁
 
-### 对游戏本体的分析
+解锁第九章的前置条件是在第八章的最终曲目 *Distorted Fate* 中得分超过 880,000。进入第九章后，阅读情节《D.O.M.E.》，解锁并阅读情节《行与憩》，最终解锁剧情《破译：Evanescent》和《破译：Implexrough》。在「穹顶孤舟」的地图向左上角滑动，阅读剧情《归零》后解锁剧情《破译：About The Universe》。
+
+注意到《破译：Evanescent》、《破译：Implexrough》和《破译：About The Universe》中，均存在关键词「人类」：
+
+![《破译：Evanescent》](/assets/stage_ii/phigros_4.0.0_analysis/crack_evanescent.png)
+![《破译：Implexrough》](/assets/stage_ii/phigros_4.0.0_analysis/crack_implexrough.png)
+![《破译：About The Universe》](/assets/stage_ii/phigros_4.0.0_analysis/crack_atu.png)
+
+#### About The Universe
+
+在《过去的章节》中游玩曲目「HumaN」后继续，即解锁曲目《About The Universe》。
+
+#### Evanescent
+
+重新查看所有剧情后，在「收藏品」页面确保所有的收藏品页面均已读，随后游玩曲目《Doppelganger》，在后半段进入异象并卡死时退出曲目游玩，即进入《Evanescent》。
+
+#### Implexrough
+
+在《单曲精选集》中长按或连续点击左上角的「随机」按钮直到随机到歌曲《Random》，开始游玩后进入曲目《Implexrough》。游玩结束后弹出部分单句剧情。
+
+#### Entrance to the Chaos
+
+重新进入「穹顶孤舟」的地图，解锁并阅读剧情《破译：Implexrough · 线索一》，点击后方的歌曲区块后进入异象歌曲选择界面，选择难度后点击开始游戏即可进入连续三首歌的完美挑战。
+
+<!-- 这里需要补一张图片。 -->
+
+完美挑战在初始情况下的游戏规则是
+
+> 出现非Perfect判定时-1//Life耗尽时强制结束游戏
+
+在初始情况下，默认血量为 10，可以在 1 和 10 中选择。在第一次挑战失败后，可以解锁血量 50。在第二次挑战失败后，可以解锁新的游戏规则
+
+> 出现Bad/Miss判定时-1//Life耗尽时强制结束游戏
+
+且血量解锁为 100，在再次失败后解锁到 200。该规则下玩家可以轻松通关。在按照顺序游玩前两首歌曲后，出现第三首歌曲《Entrance to the Chaos》，并在玩家通关后正式解锁。游玩结束后弹出部分单句剧情。
+
+<!-- 图片！ -->
+
+#### Exoplanetary Mirage
+
+重新阅读所有剧情，随后进入课题模式，发现第九章的两首歌曲（《Evanescent》和《About The Universe》）的曲名和曲绘均翻转，按照顺序选择《Evanescent》和《About The Universe》两首歌，随后可以解锁完美挑战，规则同上，在第一次游玩时解锁血量到 100，第二次到 200。
+
+在三首歌全部通关后，解锁最终曲目《Exoplanetary Mirage》。游玩结束后弹出部分单句剧情。
+
+<!-- 图片！ -->
+
+事实上，由于解锁时使用的判定为课题模式的严格判定，初见的成绩不会作为正常模式的成绩，玩家需要重新游玩曲目并解锁 AT 难度。
 
 在完成 2 首表魔王曲的解锁后，我们于「穹顶孤舟」的地图向上滑动，发现了一个闪烁的隐藏曲目占位符，点击后弹出「ACCESS DENIED」界面，显示
 
@@ -124,6 +182,10 @@ https://ch9.oss-cn-beijing.aliyuncs.com/Solivault.png
 同时，下方提供一个输入框可供输入通行密钥（PASSCODE）。玩家几乎尝试了绝大多数可能的密钥，均不能成功解密。事实上，这个密钥必须通过 [林泊百科的解密](#林泊百科的解密) 获得——有解包者尝试分析了游戏本体，并确认了这一点。
 
 ![隐藏曲目弹出的「ACCESS DENIED」界面](assets/stage_ii/phigros_4.0.0_analysis/access_denied.jpg)
+
+在输入正确的密钥后，游戏进入隐藏曲目《True Home, True World》的前半段，并进入演出和一段剧情。至此，第九章第一部分解锁告一段落。
+
+### 对游戏本体的分析
 
 > [!WARNING]
 >
@@ -206,6 +268,8 @@ const f = URL.createObjectURL(
 
 脚本截取第二个 PNG 起点到文件末尾的数据，取为 `"image/png"` 的 blob，并调用 `createObjectURL` 生成临时 `ObjectURL`。之后的 JavaScript 代码加载了第二张 PNG 作为 `bgImg.src`，即在页面上显示第二张 PNG；如果解析失败，则回滚到第一张 PNG。
 
+<!-- 讲解一下 PNG 的文件格式和 binwalk 的工作原理。 -->
+
 我们下载得到 [`start.png`](/artifacts/stage_ii/WERJETZTALLEINISTWIRDESLANGEBLEIBEN/start.png)，随后使用 `binwalk -a start.png` 确证 `start.png` 的确由两张图片合成，使用 `dd` 或脚本提取得到空间位置上前后的两张图片 `start.layer1.png` 和 `start.layer2.png`。WER... 页面上渲染的是 `start.layer2.png`。
 
 ![对 start.png 的 binwalk 结果](/assets/stage_ii/limbo_wiki/binwalk_start.png)
@@ -242,6 +306,7 @@ ImageChops.difference(a, b).point(lambda v: min(255, v * 8)).save(
 
 同时，用肉眼观察 `start.layer1.png`，我们也可以发现图片有细微而连续的波动，在四个角落尤其明显。这暗示我们需要对图片进行二维 Fourier 变换。
 
+<!-- 优化一下下面这一段对 Fourier 变换的解释；现在写得有一点过于学术和简略了。 -->
 一般地，人们看一张图片，是按照像素坐标 $(x, y)$ 来看的，这是空域（Spatial Domain）。而 Fourier 变换会将一张图片拆解为无数个不同方向、不同波长（频率）、不同强度的正弦波纹理叠加，这就切换到了频域（Frequency Domain）。一张图片的低频部分通常是大片平滑渐变的背景、整体的明暗轮廓；而高频部分则通常是物体的边缘、文字轮廓、细碎的杂色和噪点等。
 
 我们对 `start.layer1.png` 编写二维 Fourier 变换脚本：
@@ -454,6 +519,8 @@ Cogito,_ubi_sit_refugium
 
 ![页面上的文本含有零宽字符](/assets/stage_ii/limbo_wiki/unicode-zero-width.png)
 
+<!-- 介绍一下零宽字符？ -->
+
 这段隐写包括三种字符：`U+200B` ZERO WIDTH SPACE、`U+200C` ZERO WIDTH NON-JOINER 和 `U+200D` ZERO WIDTH JOINER。不过与一般 Misc 题目的思路不同，这段隐写中的零宽字符解码后并不是纯文本。我们再次注意到该页面的标题
 
 ```text
@@ -498,7 +565,9 @@ AROUSAL
 <meta name=" " content="56 75 65 76 35 56 75 63 97 66 67 47 72">
 ```
 
-这串数字应当为 Nihilist Cipher 的密文。Nihilist Cipher 的密码表 Polybius 方阵是 $5 \times 5$ 的，即需要 $25$ 个字符。注意到 HTML 源码中 L63 的提示
+这串数字应当为 Nihilist Cipher 的密文。<!-- 介绍一下 Nihilist Cipher。-->
+
+Nihilist Cipher 的密码表 Polybius 方阵是 $5 \times 5$ 的，即需要 $25$ 个字符。注意到 HTML 源码中 L63 的提示
 
 > hint1: This hint has been destroyed by Chaos
 

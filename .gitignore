@@ -1,7 +1,7 @@
-stage2
-stage4
-stage6
-video
-README.old.md
-.venv
+# Project-generated source artifacts
 主线第九章：穹顶孤舟.mp4
+
+# Python environments and caches
+.venv/
+__pycache__/
+*.py[cod]

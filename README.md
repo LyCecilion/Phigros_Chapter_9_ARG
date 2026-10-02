@@ -230,7 +230,7 @@ archive.org 保留了一份 2026 年 9 月 25 日晚 7 点的 [网页快照](htt
 
 #### WERJETZTALLEINISTWIRDESLANGEBLEIBEN
 
-分析 [该页面的 HTML 源码](/artifacts/stage_ii/WERJETZTALLEINISTWIRDESLANGEBLEIBEN/WERJETZTALLEINISTWIRDESLANGEBLEIBEN.html) 可知，页面倒计时的截止时间是 2026-10-02 17:00:00，页面先用内嵌的时间戳 `window.SV_EMBED_MS` 初始化时钟，然后尝试从 `ntp.php`、`timeapi.io` 和 Cloudflare `cdn-cgi/trace` 获取网络时间，同步之后每 10 分钟再同步一次。
+分析 [该页面的 HTML 源码](/artifacts/stage_ii/WERJETZTALLEINISTWIRDESLANGEBLEIBEN/WERJETZTALLEINISTWIRDESLANGEBLEIBEN.html) 可知，页面倒计时的截止时间是 2026-10-02 17:00:00（+08:00）。时钟并不取自 `Date.now()`，而是用内嵌的时间戳 `window.SV_EMBED_MS` 初始化，再加上从页面初始化起经过的高精度时长；只有在没有这个内嵌时间戳时，它才会退回去从 `ntp.php`、`timeapi.io` 和 Cloudflare `cdn-cgi/trace` 获取网络时间，成功后每 10 分钟再同步一次（见下文 [Stage III](#stage-iii10-月-2-日起)）。
 
 页面从 `https://c9.gaoice.run/start.png` 加载背景图，随后用多个 canvas 分层渲染像素位移、红雾、噪点、火花粒子、CRT 扫描线、暗角、红蓝色差、畸变等。页面固定按照 1920x1080 设计，再用 CSS 缩放到当前屏幕。在移动端打开时，倒计时会竖排显示。
 
@@ -1077,3 +1077,141 @@ python3 sstv_decode.py solivault_song.wav sstv_decoded.png
 ```
 
 频谱图由 [spectrogram.py](/artifacts/stage_ii/SSTV/spectrogram.py) 生成。
+
+## Stage III（10 月 2 日起）
+
+10 月 2 日下午四点，[WERJETZTALLEINISTWIRDESLANGEBLEIBEN](https://wiki.pigeon-games.com/WERJETZTALLEINISTWIRDESLANGEBLEIBEN) 换了一副样子：屏幕正中那串一直往下掉的数字消失了，取而代之的是一串**永远在重掷的乱码**。而这一刻，它自己的倒计时上还剩着整整一小时。
+
+![林泊百科页面 WER... 的新状态：倒计时变成乱码](/assets/stage_ii/limbo_wiki/garble_site.png)
+
+画面正中那 8 个字符每次重掷都不一样，上面这一帧恰好是 `FZ:7F:Y/:f0`。
+
+### 页面是什么时候换的
+
+| 时刻（CST） | 观察 |
+| --- | --- |
+| 10-01 13:57 | 我们保存的副本仍是倒计时版本（就是上文分析过的那份） |
+| 10-01 23:33:09 | 服务器上**新页面**文件的 `Last-Modified`：`Thu, 01 Oct 2026 15:33:09 GMT` |
+| 10-02 16:01:57 | 我们第一次抓到新版页面 |
+
+新页面在 10 月 1 日深夜就已经放上了服务器，却直到 10 月 2 日下午才对外生效——中间隔着一次我们没有直接观察到的切换。不过旧页面自己把时间写在了代码里，它的第 408 行是：
+
+```html
+<script type="72520c08f422003571902d7b-text/javascript">setTimeout(function () { location.reload(); }, 99484894);</script>
+```
+
+即「加载后 99484894 毫秒，也就是 27 小时 38 分 04.9 秒，自动刷新一次」。把这个数字和第 169 行内嵌的时间戳放在一起算：
+
+```text
+deadline             = 2026-10-02 17:00:00+08:00  = 1790931600000
+SV_EMBED_MS          = 1790828515905              = 2026-10-01 12:21:55.905+08
+deadline − embed     = 103084095 ms
+reload 定时器         =  99484894 ms
+二者之差              =   3599201 ms   （≈ 1 小时）
+
+embed + reload 定时器 = 1790928000799              = 2026-10-02 16:00:00.799+08
+```
+
+`SV_EMBED_MS` 是页面生成那一刻的服务器时间，刷新定时器与它出自同一段生成逻辑，因此「两者相加」是一个**固定的绝对时刻**：**2026-10-02 16:00:00.8**。换句话说，这个页面被设计成在自己倒计时还剩一小时的时候，把所有还开着的标签页统一刷成下一版。
+
+而服务器也确实是那一刻换的页：我们抢到新版的时间是 16:01:57，两者吻合。
+
+至于为什么偏偏要提早一小时，只能停在推测上（`[INFERENCE]`）：上一版的倒计时写作 `new Date('2026/10/02 17:00:00')`，那是**按浏览者本地时区**解析的（9 月 25 日的 [archive.org 快照](https://web.archive.org/web/20260925113526/https://wiki.pigeon-games.com/WERJETZTALLEINISTWIRDESLANGEBLEIBEN/) 里正是这一版，当时既没有 `SV_EMBED_MS`、也没有刷新定时器）。若生成端所在的时区是 UTC+9，17:00 对应的恰好就是 16:00 CST。后来显示端被改成了显式的 `+08:00`，但写在服务端那个「事件时刻」没跟着改。这只是推测；可以确定的是，那一小时被写死在了服务端逻辑里，不是某台客户端的时区问题。
+
+### 一段我们从没读过的脚本
+
+我们此前只抓了这个页面的前两段 `<script>`。实际上它有这么多段：
+
+| 行 | 内容 |
+| --- | --- |
+| 10 | 混淆的脚本，负责拼出 PNG 多态图（见上文） |
+| 169 | `window.SV_EMBED_MS = 1790828515905;` |
+| 199 | 混淆的脚本，负责像素位移、红雾、噪点等渲染 |
+| 201 | **一段完全没有混淆的倒计时脚本**（当时没有存下来） |
+| 408 | `setTimeout(function () { location.reload(); }, 99484894);` |
+
+第 201 行那段是明文的，200 行，倒计时的一切都写在里面。现已按同样的命名惯例补存为 [L201.js](/artifacts/stage_ii/WERJETZTALLEINISTWIRDESLANGEBLEIBEN/L201.js)（32,816 字节）。要点如下：
+
+```javascript
+const DEADLINE_TEXT = '2026/10/02 17:00:00';
+const target = Date.parse(DEADLINE_TEXT.replace(/\//g, '-').replace(' ', 'T') + '+08:00');
+
+let clockEpoch = (typeof window.SV_EMBED_MS === 'number' && isFinite(window.SV_EMBED_MS))
+        ? window.SV_EMBED_MS : null,
+    clockPerf = performance.now(), syncMisses = 0;
+
+function clockNow() {
+    return clockEpoch === null ? null : clockEpoch + (performance.now() - clockPerf);
+}
+```
+
+时钟不是 `Date.now()`，而是「内嵌时间戳 + 从页面初始化起经过的高精度时长」。`performance.now()` 是单调递增的，不会因为访客调整系统时间而跳变，于是即便本机时钟不准，倒计时仍然准。而只有在 `SV_EMBED_MS` 缺失时，脚本才会退回去做网络对时——同源的 `ntp.php`、`timeapi.io`、以及 Cloudflare 的 `cdn-cgi/trace`（取其中的 `ts=` 一行），成功一次后每 10 分钟再对一次。脚本末尾那句 `if (clockEpoch === null) syncRound();` 说明：**只要页面带了内嵌时间戳，它就一次网络对时都不会做。**
+
+数字的渲染是：字号取 `vw * 0.05`（窄屏 < 800px 时改为 `clamp(40, 96, vw * 0.12)` 并竖排），居中；先用纯黑、48px 模糊阴影叠画 4 遍做出厚实的色块，再用 `rgba(255,45,45,0.5)` 与 `rgba(60,200,255,0.5)` 分别向右、向左偏移 2px 画出红蓝分色，接着用一条自制的扫描线 pattern 把字再填一遍，最后整层交给 `barrelWarpCanvas(..., BARREL_K = 0.25, 8)` 做一次桶形畸变。
+
+### 新页面改了什么
+
+| | 旧（10-01） | 新（10-02） |
+| --- | --- | --- |
+| `#countdown-canvas` | ✅（`z-index: 100`） | ❌ |
+| `#garble-canvas` | ❌ | ✅（`z-index: 100`，CSS 逐字相同） |
+| `window.SV_EMBED_MS` | ✅ | ❌ |
+| `<meta name="GUGUGUGU">` | ✅ | ❌ |
+| `location.reload` 定时器 | ✅ | ❌ |
+| `scaler` 1920×1080、`haze` / `swept-top` / `vignette` / `dim` / `crt-vignette` / `fog` / `displace` / `fx` / `scanline` | ✅ | ✅（完全一致） |
+
+旧页面里那个自成一格的 `<meta name="GUGUGUGU" content="GUGUGUGUGUGUGUGU!">` 也一并消失了。
+
+### 新页面上的乱码，就是倒计时的「换皮」
+
+把新页面那唯一一段混淆脚本还原后可以看到，它在原倒计时的位置上放了一个新函数：
+
+```javascript
+function Aa(a) {
+    const b = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789!@#$%^&*()-_=+[]{}<>?/\\|~";
+    let c = "";
+    for (let d = 0; d < a; d++) c += b[Math.floor(Math.random() * b.length)];
+    return c;
+}
+function Ea() {
+    return [Aa(2), Aa(2), Aa(2), Aa(2)].join(":");
+}
+```
+
+也就是 `XX:XX:XX:XX`——四组、每组两个从 76 个字符里随机取出的字符。除了「画什么」变了，其余渲染管线一模一样：
+
+| 环节 | 旧（倒计时） | 新（乱码） |
+| --- | --- | --- |
+| 文本 | `D:HH:MM:SS` | `XX:XX:XX:XX`（每次重掷） |
+| 重绘节奏 | `setInterval(renderCountdown, 1000)` | `setInterval(Ja, 33)`，且累加器每帧 +0.7，约每秒重掷 15 次 |
+| 字号 / 竖排阈值 | `vw*0.05`，< 800px 竖排 | 相同 |
+| 阴影 / 红蓝分色 | 黑 48px 叠 4 遍，红 +2px、青 −2px | 相同 |
+| 扫描线 pattern | `fontSize * 0.0417` | 相同 |
+| 桶形畸变 | `barrelWarpCanvas(..., 0.25, 8)` | 同一个函数，同样的 `0.25` 与 `8` |
+
+扫描线的处理也一并从明文脚本搬进了混淆脚本（周期 3px、透明度 0.16、同样的畸变），参数一字未改。
+
+### 还原这段新脚本
+
+新版只有一段混淆脚本（46,887 字节），用的还是 javascript-obfuscator 的那一套：一个字符串数组加一个 RC4 解码器。但它有两个坑：
+
+1. **字符串被切成碎片**。数组里存的不是整串，而是 8 个字符一段，例如背景图地址被拆成了 `"https://" + "c9.gaoic" + "e.run/st" + "art.png"`；还原之后需要再把相邻的字面量拼回去。
+2. **带反调试**。把整段脚本丢进 Node 的 `vm` 里执行，进程会被静默杀死——退出码 0、没有任何输出，连 `process.exit` 的拦截都不会触发。可行的做法是把「字符串数组函数 + 解码器 + 轮转 IIFE」这三段单独切出来求值，不去执行页面逻辑。
+
+按这个办法一共还原了 445 处字符串引用，0 处失败。反混淆后的代码见 [201.js](/artifacts/stage_ii/WER_2/201.js)（只保留逻辑）与 [WERJETZTALLEINISTWIRDESLANGEBLEIBEN.js](/artifacts/stage_ii/WER_2/WERJETZTALLEINISTWIRDESLANGEBLEIBEN.js)（含字符串表），原始响应见 [WERJETZTALLEINISTWIRDESLANGEBLEIBEN.html](/artifacts/stage_ii/WER_2/WERJETZTALLEINISTWIRDESLANGEBLEIBEN.html)。
+
+为了确认「除了乱码以外真的没有别的改动」，可以抹掉全部标识符名之后把新旧两版逐行比对（行多重集差）。结论是：**新脚本 = 旧 `L10` + 旧 `L199` + 旧 `L201` 的倒计时块与扫描线块 + 乱码块**，除此之外零改动。
+
+### 同一时间没有变的东西
+
+- 背景图：`https://c9.gaoice.run/start.png` 仍然原样。重新下载后 SHA-256 与 10 月 1 日的副本完全一致，OSS 上的 `Last-Modified` 也还停在 9 月 23 日 14:34 GMT。
+- 「谜题保管所:孤舟」页面自 9 月 26 日 00:33 起没有编辑记录，D.O.M.E. 没有发新公告。
+- archive.org 对这个地址到目前为止只有 9 月 25 日的一份成功快照（9 月 26 日的两次抓取都撞上了 773），也就是上面提到的那个更早的版本。
+
+> [!NOTE]
+>
+> 这个页面同样挑 User-Agent：`curl` 的默认 UA 或空 UA 会得到这个站自定义的 HTTP 状态码 773，必须伪装成常见浏览器才能拿到内容。
+
+### 小结
+
+倒计时没有走到零。它在还剩一小时的时候，被自己安排的刷新推下了悬崖——数字散成噪声。回过头看，这倒和 Stage I 里那句「唯有混沌，才能击碎那困扰无知愚者的幻象」遥相呼应。

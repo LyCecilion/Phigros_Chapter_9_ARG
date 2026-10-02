@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Phigros 第九章 ARG 网页的本地可复现存档：倒计时、乱码、3D 分层与解谜链页面。">
+  <link rel="icon" href="data:,">
+  <title>REPLAY / Phigros 第九章 ARG 存档</title>
+  <style>
+    :root { color-scheme: dark; --bg: #090d15; --panel: #101722; --line: #2b3544; --text: #ecf0f5; --muted: #a4b1c3; --accent: #a8ddd8; }
+    * { box-sizing: border-box; }
+    body { margin: 0; background: radial-gradient(ellipse at 85% 0, #17333380, transparent 45%), var(--bg); color: var(--text); font-family: system-ui, sans-serif; line-height: 1.7; }
+    a { color: inherit; text-underline-offset: 4px; }
+    a, button, input { -webkit-tap-highlight-color: transparent; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 5px; }
+    main { width: min(1180px, calc(100% - 48px)); margin: auto; }
+    .topline, .section-head, footer { display: flex; justify-content: space-between; gap: 16px; align-items: baseline; }
+    .topline { padding: 30px 0; border-bottom: 1px solid var(--line); font-size: 12px; letter-spacing: .14em; }
+    .topline span { color: var(--accent); }
+    .topline a { color: var(--muted); letter-spacing: 0; }
+    header { padding: 58px 0 42px; max-width: 850px; }
+    .eyebrow, .tag, .number { font: 12px/1.5 ui-monospace, monospace; letter-spacing: .12em; color: var(--accent); }
+    h1 { font-size: clamp(48px, 8vw, 88px); line-height: 1; letter-spacing: -.06em; margin: 18px 0 26px; font-weight: 600; }
+    h1 span { color: var(--accent); }
+    header p { color: var(--muted); max-width: 640px; margin: 0; }
+    section { margin-bottom: 44px; }
+    .section-head { margin-bottom: 20px; }
+    h2 { font-size: 20px; margin: 0; font-weight: 500; }
+    .section-head p { font-size: 12px; color: var(--muted); margin: 0; }
+    .wer-name { color: var(--muted); font: 12px/1.7 ui-monospace, monospace; overflow-wrap: anywhere; margin: -8px 0 20px; }
+    .versions { display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: 18px; }
+    .card { background: var(--panel); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; display: flex; flex-direction: column; }
+    .preview { height: 152px; position: relative; background: #03070b; overflow: hidden; border-bottom: 1px solid var(--line); }
+    .preview img { width: 100%; height: 100%; object-fit: cover; opacity: .7; }
+    .preview::after { content: ''; position: absolute; inset: 0; background: linear-gradient(transparent, #10172290); }
+    .preview-text { position: absolute; inset: 0; display: grid; place-items: center; z-index: 1; font: 28px/1 ui-monospace, monospace; letter-spacing: .12em; text-shadow: 2px 0 #de596a, -2px 0 #6dcacb; }
+    .stack { perspective: 500px; }
+    .stack i { position: absolute; left: 24%; top: 26%; width: 52%; height: 48%; border: 1px solid var(--accent); background: #10202b70; transform: rotateX(50deg) rotateZ(-25deg); z-index: 1; }
+    .stack i:nth-child(2) { top: 36%; border-color: #ba777d; }
+    .stack i:nth-child(3) { top: 46%; }
+    .card-body { padding: 22px; display: flex; flex-direction: column; flex: 1; }
+    h3 { font-size: 22px; margin: 9px 0; line-height: 1.4; font-weight: 500; }
+    .description { color: var(--muted); font-size: 14px; margin: 0 0 22px; }
+    .action { display: block; padding: 10px 16px; border: 1px solid #637c87; border-radius: 6px; background: #172a33; text-decoration: none; color: var(--text); font: inherit; font-size: 14px; text-align: center; cursor: pointer; transition: background .15s, border-color .15s; }
+    .action:hover { background: #25404a; border-color: var(--accent); }
+    .card-body > .action { margin-top: auto; }
+    form { margin-top: auto; }
+    label { display: block; font-size: 13px; margin-bottom: 8px; }
+    input { width: 100%; min-width: 0; padding: 9px; border: 1px solid #536171; border-radius: 6px; background: var(--bg); color: var(--text); font: inherit; font-size: 14px; }
+    .range-note { color: var(--muted); font-size: 11px; margin: 8px 0; }
+    .remaining { font: 12px/1.6 ui-monospace, monospace; color: var(--accent); margin: 12px 0; }
+    form .action { width: 100%; }
+    .chain { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 14px; }
+    .chain a { display: flex; align-items: center; gap: 20px; border: 1px solid var(--line); border-radius: 10px; padding: 24px; background: var(--panel); text-decoration: none; transition: border-color .15s; }
+    .chain a:hover { border-color: #637c87; }
+    .chain h3 { font: 16px/1.5 ui-monospace, monospace; margin: 0 0 5px; overflow-wrap: anywhere; }
+    .chain p { color: var(--muted); font-size: 13px; margin: 0; }
+    .arrow { color: var(--accent); margin-left: auto; flex-shrink: 0; }
+    .notice { padding: 18px 22px; border-left: 2px solid var(--accent); background: #122126; color: var(--muted); font-size: 13px; }
+    .notice strong { color: var(--text); font-weight: 500; }
+    footer { border-top: 1px solid var(--line); padding: 24px 0 32px; color: var(--muted); font-size: 12px; }
+    @media (max-width: 900px) { .versions { grid-template-columns: 1fr; } .preview { height: 180px; } .card-body { padding: 24px; } }
+    @media (max-width: 600px) { main { width: calc(100% - 32px); } header { padding: 40px 0 32px; } .chain { grid-template-columns: 1fr; } .chain a { padding: 20px 16px; gap: 14px; } .section-head, footer { flex-direction: column; gap: 6px; } .topline { letter-spacing: .04em; } }
+  </style>
+</head>
+<body>
+  <main>
+    <nav class="topline" aria-label="存档说明">
+      <span>PHIGROS / CHAPTER IX</span>
+      <a href="https://github.com/LyCecilion/Phigros_Chapter_9_ARG/blob/main/replay/README.md">使用说明 ↗</a>
+    </nav>
+    <header>
+      <div class="eyebrow">WEB ARCHIVE · 2026</div>
+      <h1>RE<span>PLAY.</span></h1>
+      <p>重返「穹顶孤舟」的网页解谜现场。<br>这里保存了页面的不同状态，也把藏在画面背后的渲染层展开给你看。</p>
+    </header>
+    <section aria-labelledby="wer-heading">
+      <div class="section-head">
+        <h2 id="wer-heading">01 / Solivault · 三个版本</h2>
+        <p>同一个入口，不同的时刻与视角</p>
+      </div>
+      <p class="wer-name">WERJETZTALLEINISTWIRDESLANGEBLEIBEN</p>
+      <div class="versions">
+        <article class="card">
+          <div class="preview" aria-hidden="true">
+            <img src="WERJETZTALLEINISTWIRDESLANGEBLEIBEN/start.layer2.png" alt="">
+            <span class="preview-text">7:00:00:00</span>
+          </div>
+          <div class="card-body">
+            <span class="tag">STAGE II / COUNTDOWN</span>
+            <h3>七日倒计时</h3>
+            <p class="description">从你选择的历史时刻开始，重放那场通向 10 月 2 日 17:00 的倒数。</p>
+            <form id="countdown-form" action="WERJETZTALLEINISTWIRDESLANGEBLEIBEN/index.html" method="get">
+              <label for="replay-start">倒计时起始时间（UTC+8 / 北京时间）</label>
+              <input id="replay-start" name="start" type="datetime-local" min="2026-09-25T17:00" max="2026-10-02T16:00" value="2026-09-25T17:00" step="60" required aria-describedby="time-range remaining">
+              <p class="range-note" id="time-range">2026-09-25 17:00 — 2026-10-02 16:00</p>
+              <p class="remaining" id="remaining" aria-live="polite">起始剩余 · 7 天 00 时 00 分</p>
+              <button class="action" type="submit">从此刻开始重放 →</button>
+            </form>
+            <noscript><p class="range-note">仍可提交表单进入页面；倒计时动画需要启用 JavaScript。</p></noscript>
+          </div>
+        </article>
+        <article class="card">
+          <div class="preview" aria-hidden="true">
+            <img src="WERJETZTALLEINISTWIRDESLANGEBLEIBEN/start.layer2.png" alt="">
+            <span class="preview-text">FZ:7F:Y/:f0</span>
+          </div>
+          <div class="card-body">
+            <span class="tag">STAGE III / GARBLE</span>
+            <h3>10 月 2 日 · 乱码</h3>
+            <p class="description">16:00，数字消失。保留换页后的随机乱码动画，以及原有的背景与视觉效果。</p>
+            <a class="action" href="WERJETZTALLEINISTWIRDESLANGEBLEIBEN_2026-10-02_garble/index.html">进入乱码版本 →</a>
+          </div>
+        </article>
+        <article class="card">
+          <div class="preview stack" aria-hidden="true"><i></i><i></i><i></i></div>
+          <div class="card-body">
+            <span class="tag">RENDER STACK / 3D</span>
+            <h3>3D 渲染分层</h3>
+            <p class="description">沿 Z 轴展开背景、红雾、暗角与火花。可播放、拖动进度、隐藏控件，适合演示与录屏。</p>
+            <a class="action" href="WER_3D/index.html">进入分层演示 →</a>
+          </div>
+        </article>
+      </div>
+    </section>
+    <section aria-labelledby="chain-heading">
+      <div class="section-head">
+        <h2 id="chain-heading">02 / 解谜链 · 页面存档</h2>
+        <p>按当时的探索顺序排列</p>
+      </div>
+      <div class="chain">
+        <a href="outside_the_birdcage/index.html"><span class="number">01</span><div><h3>outside_the_birdcage</h3><p>鸟笼之外 · 格状背景与字符串碎片</p></div><span class="arrow" aria-hidden="true">↗</span></a>
+        <a href="Cogito,_ubi_sit_refugium/index.html"><span class="number">02</span><div><h3>Cogito,_ubi_sit_refugium</h3><p>我思，避难所何在？ · 文本与隐藏字符</p></div><span class="arrow" aria-hidden="true">↗</span></a>
+        <a href="DISORIENTATION/index.html"><span class="number">03</span><div><h3>DISORIENTATION</h3><p>迷失方向 · 我们如何栖居于世界？</p></div><span class="arrow" aria-hidden="true">↗</span></a>
+        <a href="JUSTENGAGEWTH/index.html"><span class="number">04</span><div><h3>JUSTENGAGEWTH</h3><p>再迈一步 · 你一直以来就知道的事</p></div><span class="arrow" aria-hidden="true">↗</span></a>
+      </div>
+    </section>
+    <aside class="notice"><strong>这是本地重放，不是官方实时页面。</strong> 素材随存档打包；部分原服务器响应改用已收集样本。建议通过 HTTP 静态服务访问，乱码版不支持直接双击 HTML。倒计时按真实经过时间推进，刷新会从所选时刻重新开始，不会自动切换为乱码版。</aside>
+    <p class="notice"><strong>版权说明：</strong>本存档所收录的 Phigros 原始网页、图片、文本及相关游戏素材，版权归南京鸽游网络有限公司所有；第三方字体等素材的权利归各自权利人所有。本项目为非官方、非商业的存档与解谜复盘，不代表官方立场，亦不构成对原素材的再授权。请勿将相关素材用于未经授权的商业用途。</p>
+    <footer><span>PHIGROS 第九章 ARG / 可复现网页存档</span><a href="https://github.com/LyCecilion/Phigros_Chapter_9_ARG/blob/main/replay/README.md">文件、操作与部署说明 ↗</a></footer>
+  </main>
+  <script>
+    (() => {
+      const form = document.getElementById('countdown-form');
+      const input = document.getElementById('replay-start');
+      const remaining = document.getElementById('remaining');
+      const deadline = Date.parse('2026-10-02T17:00:00+08:00');
+      function updateRemaining() {
+        if (!input.value || !input.validity.valid) {
+          remaining.textContent = '请选择范围内的有效时间';
+          return;
+        }
+        const minutes = (deadline - Date.parse(input.value + '+08:00')) / 60000;
+        const days = Math.floor(minutes / 1440);
+        const hours = String(Math.floor(minutes % 1440 / 60)).padStart(2, '0');
+        const mins = String(minutes % 60).padStart(2, '0');
+        remaining.textContent = `起始剩余 · ${days} 天 ${hours} 时 ${mins} 分`;
+      }
+      input.addEventListener('input', updateRemaining);
+      window.addEventListener('pageshow', updateRemaining);
+      form.addEventListener('submit', event => {
+        event.preventDefault();
+        const url = new URL(form.action);
+        url.searchParams.set('start', input.value + '+08:00');
+        location.href = url.href;
+      });
+      updateRemaining();
+    })();
+  </script>
+</body>
+</html>

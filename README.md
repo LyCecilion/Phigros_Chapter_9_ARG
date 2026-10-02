@@ -20,7 +20,7 @@ Repo 内文件夹：
 
 - [`artifacts`](/artifacts/) -> ARG 的分析产物 / 中间物
 - [`assets`](/assets/) -> Markdown 文档中插入的素材
-- [`replay`](/replay/) -> ARG 网页的可复现存档
+- [`replay`](/replay/) -> 去掉跟踪/服务器侧请求的 ARG 网页的可复现存档（[导航入口](/replay/index.html) / [文件与部署说明](/replay/README.md)）
 - [`video`](/video/) -> 已经弃坑的 Phigros 第九章 RAG 讲解视频 Manim 脚本
 
 在 [ARG_explanation.md](/ARG_explanation.md) 查看 ARG 解谜的解析，该解析偏向技术层面和底层原理。笔者预期将该解析制作为 Manim 视频，但工期受限从而暂时搁置。

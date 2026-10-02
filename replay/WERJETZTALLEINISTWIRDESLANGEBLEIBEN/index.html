@@ -210,18 +210,21 @@
   <script data-cfasync="false">
     const countdownCanvas = document.getElementById('countdown-canvas');
     const countdownCtx = countdownCanvas.getContext('2d');
-    const REPLAY_DURATION_MS = 7 * 24 * 60 * 60 * 1000;
-    let clockEpoch = Date.now();
-    let clockPerf = performance.now();
-    const target = clockEpoch + REPLAY_DURATION_MS;
+    // Replay the historical clock locally; never depend on today's date or a time API.
+    const replayMin = Date.parse('2026-09-25T17:00:00+08:00');
+    const replayMax = Date.parse('2026-10-02T16:00:00+08:00');
+    const requestedStart = Date.parse(new URLSearchParams(location.search).get('start'));
+    const clockEpoch = Number.isFinite(requestedStart) && requestedStart >= replayMin && requestedStart <= replayMax
+      ? requestedStart : replayMin;
+    const clockPerf = performance.now();
+    const target = Date.parse('2026-10-02T17:00:00+08:00');
 
-    function clockNow() { return clockEpoch === null ? null : clockEpoch + (performance.now() - clockPerf); }
+    function clockNow() { return clockEpoch + (performance.now() - clockPerf); }
 
     function pad(n) { return String(n).padStart(2, '0'); }
 
     function countdownText() {
       const now = clockNow();
-      if (now === null) return '--:--:--:--';
       const diff = target - now;
       if (diff <= 0) return '0:00:00:00';
       const s = Math.floor(diff / 1000);

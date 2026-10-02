@@ -1080,7 +1080,7 @@ python3 sstv_decode.py solivault_song.wav sstv_decoded.png
 
 两种状态分别保存为独立的本地 replay，避免新版覆盖旧版：
 
-- [倒计时版](/replay/WERJETZTALLEINISTWIRDESLANGEBLEIBEN/index.html)：每次打开从剩余七天开始计时。
+- [倒计时版](/replay/WERJETZTALLEINISTWIRDESLANGEBLEIBEN/index.html)：默认每次打开从剩余七天开始计时，也可在 [replay 导航](/replay/index.html) 选择 2026 年 9 月 25 日 17:00 至 10 月 2 日 16:00（UTC+8）之间的历史起点，重放通向 10 月 2 日 17:00 的倒计时。文件与部署说明见 [replay/README.md](/replay/README.md)。
 - [10 月 2 日乱码版](/replay/WERJETZTALLEINISTWIRDESLANGEBLEIBEN_2026-10-02_garble/index.html)：保留新版随机乱码动画，使用本地打包背景和字体。
 - [旧版 3D 分层演示](/replay/WER_3D/index.html)：保持原来的录屏演示版本不变。
 

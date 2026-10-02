@@ -1080,13 +1080,11 @@ python3 sstv_decode.py solivault_song.wav sstv_decoded.png
 
 ## Stage III（10 月 2 日起）
 
-10 月 2 日下午四点，[WERJETZTALLEINISTWIRDESLANGEBLEIBEN](https://wiki.pigeon-games.com/WERJETZTALLEINISTWIRDESLANGEBLEIBEN) 换了一副样子：屏幕正中那串一直往下掉的数字消失了，取而代之的是一串永远在重掷的乱码。而这一刻，它自己的倒计时上还剩着整整一小时。
+10 月 2 日下午四点，[WERJETZTALLEINISTWIRDESLANGEBLEIBEN](https://wiki.pigeon-games.com/WERJETZTALLEINISTWIRDESLANGEBLEIBEN) 换了一副样子：屏幕正中那串一直往下掉的数字消失了，取而代之的是一串永远在重掷的乱码。而这一刻，它自己的倒计时上本应还剩整整一小时。
 
 ![林泊百科页面 WER... 的新状态：倒计时变成乱码](/assets/stage_ii/limbo_wiki/garble_site.png)
 
 画面正中那 8 个字符每次重掷都不一样，上面这一帧恰好是 `FZ:7F:Y/:f0`。
-
-### 页面是什么时候换的
 
 | 时刻（CST） | 观察 |
 | --- | --- |
@@ -1101,7 +1099,7 @@ python3 sstv_decode.py solivault_song.wav sstv_decoded.png
 <script type="72520c08f422003571902d7b-text/javascript">setTimeout(function () { location.reload(); }, 99484894);</script>
 ```
 
-即「加载后 99484894 毫秒，也就是 27 小时 38 分 04.9 秒，自动刷新一次」。把这个数字和第 169 行内嵌的时间戳放在一起算：
+即，加载后 99484894 毫秒，也就是 27 小时 38 分 04.9 秒，自动刷新一次。把这个数字和第 169 行内嵌的时间戳放在一起算：
 
 ```text
 deadline             = 2026-10-02 17:00:00+08:00  = 1790931600000
@@ -1113,26 +1111,11 @@ reload 定时器         =  99484894 ms
 embed + reload 定时器 = 1790928000799              = 2026-10-02 16:00:00.799+08
 ```
 
-`SV_EMBED_MS` 是页面生成那一刻的服务器时间，刷新定时器与它出自同一段生成逻辑，因此「两者相加」是一个固定的绝对时刻：2026-10-02 16:00:00.8。换句话说，这个页面被设计成在自己倒计时还剩一小时的时候，把所有还开着的标签页统一刷成下一版。
+`SV_EMBED_MS` 是页面生成那一刻的服务器时间，刷新定时器与它出自同一段生成逻辑，因此「两者相加」是一个固定的绝对时刻：2026-10-02 16:00:00.8。换句话说，这个页面被设计成在自己倒计时还剩一小时的时候，把所有还开着的标签页统一刷成下一版。而服务端那次换页，与这个由旧页面自己算出来的时刻分毫不差：16:00 整，页面切走。
 
-而服务端那次换页，与这个由旧页面自己算出来的时刻分毫不差：16:00 整，页面切走。
+新页面移除了 `#countdown-canvas`，转而新增了 `#garble-canvs`。同时，旧页面中，`window.SV_EMBED_MS`、`<meta>` 块中的 `GUGUGUGU`、`location.reload` 定时器等都被移除。其余内容均未发生大的变动。
 
-### 新页面改了什么
-
-| | 旧（10-01） | 新（10-02） |
-| --- | --- | --- |
-| `#countdown-canvas` | ✅（`z-index: 100`） | ❌ |
-| `#garble-canvas` | ❌ | ✅（`z-index: 100`，CSS 逐字相同） |
-| `window.SV_EMBED_MS` | ✅ | ❌ |
-| `<meta name="GUGUGUGU">` | ✅ | ❌ |
-| `location.reload` 定时器 | ✅ | ❌ |
-| `scaler` 1920×1080、`haze` / `swept-top` / `vignette` / `dim` / `crt-vignette` / `fog` / `displace` / `fx` / `scanline` | ✅ | ✅（完全一致） |
-
-旧页面里那个自成一格的 `<meta name="GUGUGUGU" content="GUGUGUGUGUGUGUGU!">` 也一并消失了。
-
-### 新页面上的乱码，就是倒计时的「换皮」
-
-把新页面那唯一一段混淆脚本还原后可以看到，它在原倒计时的位置上放了一个新函数：
+新页面上的乱码，就是倒计时的「换皮」。把新页面那唯一一段混淆脚本还原后可以看到，它在原倒计时的位置上放了一个新函数：
 
 ```javascript
 function Aa(a) {
@@ -1148,8 +1131,6 @@ function Ea() {
 
 也就是 `XX:XX:XX:XX`——四组、每组两个从 76 个字符里随机取出的字符。除了「画什么」变了，其余渲染管线一模一样。扫描线的处理也一并从明文脚本搬进了混淆脚本（周期 3px、透明度 0.16、同样的畸变），参数一字未改。
 
-### 还原这段新脚本
-
 新版只有一段混淆脚本（46,887 字节），用的还是 javascript-obfuscator 的那一套：一个字符串数组加一个 RC4 解码器。但它有两个坑：
 
 1. 字符串被切成碎片。数组里存的不是整串，而是 8 个字符一段，例如背景图地址被拆成了 `"https://" + "c9.gaoic" + "e.run/st" + "art.png"`；还原之后需要再把相邻的字面量拼回去。
@@ -1159,8 +1140,4 @@ function Ea() {
 
 为了确认「除了乱码以外真的没有别的改动」，可以抹掉全部标识符名之后把新旧两版逐行比对（行多重集差）。结论是：新脚本 = 旧 `L10` + 旧 `L199` + 旧 `L201` 的倒计时块与扫描线块 + 乱码块，除此之外零改动。
 
-### 同一时间没有变的东西
-
-- 背景图：`https://c9.gaoice.run/start.png` 仍然原样。重新下载后 SHA-256 与 10 月 1 日的副本完全一致，OSS 上的 `Last-Modified` 也还停在 9 月 23 日 14:34 GMT。
-- 「谜题保管所:孤舟」页面自 9 月 26 日 00:33 起没有编辑记录，D.O.M.E. 没有发新公告。
-- archive.org 对这个地址到目前为止只有 9 月 25 日的一份成功快照（9 月 26 日的两次抓取都撞上了 773），也就是上面提到的那个更早的版本。
+背景图：`https://c9.gaoice.run/start.png` 仍然原样。重新下载后 SHA-256 与 10 月 1 日的副本完全一致，OSS 上的 `Last-Modified` 也还停在 9 月 23 日 14:34 GMT。「谜题保管所:孤舟」页面自 9 月 26 日 00:33 起没有编辑记录，D.O.M.E. 没有发新公告。

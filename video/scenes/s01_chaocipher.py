@@ -181,15 +181,37 @@ class ChaoBase(Narrated):
         self.cursor = SurroundingRectangle(self.ct[done], color=GOLD, buff=0.06, stroke_width=2)
 
     def step(self, k: int, pace: str):
-        """解第 k 个字母。pace: 'slow' 逐步讲解 / 'mid' 分步无字幕 / 'fast' 一步到位。"""
+        """解第 k 个字母。pace: 'slow' 逐步讲解 / 'mid' 分步无字幕 / 'fast' 一步到位 / 'rush' 最快一档。"""
         c = CIPHERTEXT[k]
         p, i, new_left, new_right = STATES[k]
         L, R = self.left, self.right
-        t = {"slow": 1.0, "mid": 0.45, "fast": 0.22}[pace]
+        t = {"slow": 1.0, "mid": 0.45, "fast": 0.2, "rush": 0.11}[pace]
 
         cursor = SurroundingRectangle(self.ct[k], color=GOLD, buff=0.06, stroke_width=2)
         hit_l, hit_r = L.slot(i, GOLD), R.slot(i, OK)
         link = DashedLine(L.point(i), R.point(i), color=ACCENT, stroke_width=2, dash_length=0.1)
+        out = R.glyphs[p].copy().set_color(OK)
+
+        if pace == "rush":
+            # 最快一档：替换、置换各连播一次，看着就是字母在往下飞
+            self.add(out)
+            self.play(
+                Transform(self.cursor, cursor),
+                Create(hit_l),
+                Create(hit_r),
+                Create(link),
+                out.animate.move_to(tape_slot(k, PT_Y)).scale(24 / 26),
+                run_time=2.4 * t,
+            )
+            self.pt.add(out)
+            self.play(
+                FadeOut(VGroup(hit_l, hit_r, link)),
+                L.morph(new_left),
+                R.morph(new_right),
+                run_time=2.4 * t,
+            )
+            assert L.order == new_left and R.order == new_right
+            return
 
         if pace == "slow":
             self.say("解密：先在左盘上找到密文字母")
@@ -200,7 +222,6 @@ class ChaoBase(Narrated):
             self.say("右盘上同一位置的字母，就是明文")
         self.play(Create(link), Create(hit_r), run_time=0.6 * t)
 
-        out = R.glyphs[p].copy().set_color(OK)
         self.add(out)
         self.play(out.animate.move_to(tape_slot(k, PT_Y)).scale(24 / 26), run_time=0.7 * t)
         self.pt.add(out)
@@ -212,8 +233,9 @@ class ChaoBase(Narrated):
                 FadeOut(VGroup(hit_l, hit_r, link)),
                 L.morph(new_left),
                 R.morph(new_right),
-                run_time=0.55,
+                run_time=2.4 * t,
             )
+            assert L.order == new_left and R.order == new_right
             return
 
         # ① 两盘一起转，命中位置到 zenith
@@ -314,11 +336,13 @@ class ChaocipherRun(ChaoBase):
         self.add(self.ct_tag, self.pt_tag, self.ct, self.pt, self.cursor)
         self.say("每解一个字母，就做一次同样的替换 + 置换")
 
-        for k in range(1, 4):
+        for k in range(1, 3):  # 解出前三个明文（W E R）之后就开始加速
             self.step(k, "mid")
         self.say("越往后越快：规则不变，只是字母表一直在变")
-        for k in range(4, len(CIPHERTEXT)):
+        for k in range(3, 8):
             self.step(k, "fast")
+        for k in range(8, len(CIPHERTEXT)):
+            self.step(k, "rush")
         self.play(FadeOut(self.cursor))
         self.wait(0.8)
 
@@ -355,8 +379,9 @@ class ChaocipherWhyChaos(ChaoBase):
         pt = tape(PLAINTEXT, 0.9, OK)
         ct_tag = cn("密文", 24).set_color(MUTED).next_to(ct, LEFT, buff=0.35)
         pt_tag = cn("明文", 24).set_color(MUTED).next_to(pt, LEFT, buff=0.35)
-        VGroup(ct_tag, ct, pt_tag, pt).scale(1.1).set_x(0)
-        self.play(FadeIn(VGroup(ct_tag, ct, pt_tag, pt)))
+        rows = VGroup(ct_tag, ct, pt_tag, pt).scale(1.1)
+        rows.set_x(0).set_y(0)  # 两行居中：结论那三行改由字幕说，画面只留这两行
+        self.play(FadeIn(rows))
         self.wait(0.6)
 
         hits = [k for k, c in enumerate(CIPHERTEXT) if c == "G"]
@@ -369,20 +394,12 @@ class ChaocipherWhyChaos(ChaoBase):
             mono("G", 40).set_color(CIPHER),
             mono("→", 40).set_color(MUTED),
             VGroup(*[mono(PLAINTEXT[k], 40).set_color(OK) for k in hits]).arrange(RIGHT, buff=0.5),
-        ).arrange(RIGHT, buff=0.4).move_to(DOWN * 0.7)
+        ).arrange(RIGHT, buff=0.4).move_to([0, -1.45, 0])
         self.say("每次解出来的明文都不一样")
         self.play(FadeIn(mapping[:2]))
         self.play(LaggedStart(*[TransformFromCopy(pt[k], m) for k, m in zip(hits, mapping[2])], lag_ratio=0.3))
         self.wait(1.2)
 
-        fixed = VGroup(
-            cn("凯撒、Atbash：一个字母永远对应同一个字母", 28).set_color(MUTED),
-            cn("Chaocipher：字母表每一步都在变", 28).set_color(GOLD),
-            cn("字母频率被打散，统计分析几乎无从下手", 28).set_color(FG),
-        ).arrange(DOWN, buff=0.3).move_to(DOWN * 2.3)
-        self.play(FadeOut(self.caption))
-        self.caption = None
-        for line in fixed:
-            self.play(FadeIn(line, shift=UP * 0.1))
-            self.wait(0.8)
-        self.wait(1.5)
+        self.say("凯撒、Atbash：一个字母永远对应同一个字母", wait=1.0)
+        self.say("Chaocipher：字母表每一步都在变", wait=1.0)
+        self.say("字母频率被打散，统计分析几乎无从下手", wait=1.5)

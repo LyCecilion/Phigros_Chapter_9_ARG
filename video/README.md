@@ -255,8 +255,21 @@ cn("中文正文", 32)          # 霞鹜文楷
 ui("界面中文", 32)          # 黑体
 mono("password", 26)        # 等宽（伪代码 / hex）
 box(mob, color=OK)          # 圆角边框
-chip("解锁", color=GOLD)    # 小标签（文字 + 同色细框）
+chip("解锁", color=GOLD)    # 小标签（文字 + 同色细框，框高固定）
 ```
+
+**基线对齐**（`Text` 的包围盒是墨迹范围，降部会把一行撑高、纯大写又更矮，
+按中心摆放会让同一排 / 同一列的文字各自浮一截，所以要排整齐就得对齐基线）：
+
+```python
+baseline_offset("pHYs", 24)                  # 该行基线相对墨迹中心的偏移
+place_baseline(mob, "pHYs", 24, -1.05)       # 把这一行的基线摆到 y = -1.05
+baseline_row((".Bravo", "_Charlie"), 28, buff=0.75, baseline_y=-0.2)   # 一排共享基线
+```
+
+`chip()` 内部就是按这个来的：框高用固定行框 `CHIP_REF = "Hg字"`（升部 + 降部 + 汉字，
+盖住项目里所有标签），文字统一坐在同一条基线上——`tEXt` / `pHYs` / `gAMA` 三个标签
+不会再一个高一个矮、字也不会错行。
 
 ### 5.4 检查中文字体是否可见
 ```bash
@@ -355,6 +368,29 @@ ffmpeg -v error -f lavfi -i "testsrc2=size=1920x1080:duration=1:rate=1" \
 ```
 
 ---
+
+### 5.8 出片：1080p60 + 去掉底部字幕
+
+预览版（`480p15/`）里底部那句字幕只是**旁白占位**。正式出片用：
+
+```bash
+cd video
+./render_final.sh            # 全部 Scene → media/videos/<文件名>/1080p60/<Scene>.mp4
+./render_final.sh 's06*'     # 只出一支（文件名的模式，记得加引号）
+```
+
+它做两件事：
+
+1. `export OMP_NO_CAPTION=1` —— `Narrated.say()` 会把字幕换成**看不见的占位**（时长照旧），
+   所以**画面里没有字幕，但每一幕的总时长与预览版完全一致**，配音时先对预览找节奏、最后换成片即可；
+2. 用 `-qh` 渲染（`manim.cfg` 里 `pixel_width/height = 1920/1080`、`frame_rate = 60`）。
+
+配套：**`SCRIPT.md`** 是全片配音稿（按「拍」给出每一幕的台词、时长，并标出哪些段落是 Manim、哪些是实录 / 口播）。
+
+> 只想渲一幕做对比、又不覆盖预览版：
+> ```bash
+> OMP_NO_CAPTION=1 ./render.sh -ql --media_dir /tmp/nocap scenes/s06_zero_width_morse.py ZeroWidthReveal
+> ```
 
 ## 6. 故障排查
 

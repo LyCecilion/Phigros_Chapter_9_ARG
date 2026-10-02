@@ -129,22 +129,11 @@ def result_strip(result: list[str | None], y: float, x0: float = -0.35, step: fl
     )
 
 
-def header(title: str, subtitle: str | None = None) -> VGroup:
-    title_mob = ui(title, 38).set_color(FG)
-    if subtitle is None:
-        return VGroup(title_mob).to_edge(UP, buff=0.42)
-    note = ui(subtitle, 21).set_color(MUTED)
-    return VGroup(title_mob, note).arrange(DOWN, buff=0.12).to_edge(UP, buff=0.35)
-
-
 class NihilistSquare(Narrated):
     """从 Chaocipher 右盘得到 5×5 Polybius 方阵。"""
 
     def construct(self):
-        title = header("Nihilist Cipher · 先造一张表", "5 × 5 只能容纳 25 个字符")
-        self.play(FadeIn(title, shift=DOWN * 0.15))
-
-        source = mono(RIGHT_SOURCE, 29).set_color(FG).move_to(UP * 1.75)
+        source = mono(RIGHT_SOURCE, 29).set_color(FG).move_to(UP * 2.50)
         source_tag = ui("Chaocipher 右盘", 20).set_color(MUTED).next_to(source, UP, buff=0.18)
         self.say("提示把我们带回了 Chaocipher 的右盘")
         self.play(FadeIn(source_tag), FadeIn(source))
@@ -158,7 +147,7 @@ class NihilistSquare(Narrated):
         self.wait(0.6)
 
         square, cells = make_square()
-        square.move_to([-3.9, -0.05, 0])
+        square.move_to([-3.9, 0.10, 0])
         caption = grid_caption(square, "I / J 合并：这里没有 I")
         self.play(FadeIn(square), FadeIn(caption), run_time=1.0)
         self.say("剩下 25 个字母，按行放进方阵")
@@ -177,38 +166,35 @@ class NihilistSquare(Narrated):
             mono("1  2  3  4  5", 27).set_color(GOLD),
             mono("A = 31", 32).set_color(OK),
             mono("R = 32", 32).set_color(OK),
-        ).arrange(DOWN, aligned_edge=LEFT, buff=0.22).move_to([2.0, -0.25, 0])
+        ).arrange(DOWN, aligned_edge=LEFT, buff=0.22).move_to([2.0, 0.25, 0])
         self.say("每个字母的位置，就是两位数：行号再接列号")
         self.play(FadeIn(right, shift=LEFT * 0.2))
         self.play(Indicate(cells["A"], color=GOLD), Indicate(cells["R"], color=GOLD), run_time=1.0)
         self.wait(1.8)
         self.hush()
-        self.play(FadeOut(VGroup(title, source, source_tag, cross, square, caption, right)))
+        self.play(FadeOut(VGroup(source, source_tag, cross, square, caption, right)))
 
 
 class NihilistArithmetic(Narrated):
     """展示 Nihilist 的加法，以及解密时的减法。"""
 
     def construct(self):
-        title = header("Nihilist Cipher · 坐标会被加密钥", "不是把字母直接换成另一个字母")
-        self.play(FadeIn(title, shift=DOWN * 0.15))
-
         left = VGroup(
             mono("明文", 25).set_color(OK),
             mono("24", 48).set_color(OK),
-        ).arrange(DOWN, buff=0.25).move_to([-4.5, 0.7, 0])
-        plus = mono("+", 40).set_color(MUTED).move_to([-2.7, 0.7, 0])
+        ).arrange(DOWN, buff=0.25).move_to([-4.5, 1.2, 0])
+        plus = mono("+", 40).set_color(MUTED).move_to([-2.7, 1.2, 0])
         middle = VGroup(
             mono("密钥", 25).set_color(GOLD),
             mono("35", 48).set_color(GOLD),
-        ).arrange(DOWN, buff=0.25).move_to([-1.5, 0.7, 0])
-        equals = mono("=", 40).set_color(MUTED).move_to([0.0, 0.7, 0])
+        ).arrange(DOWN, buff=0.25).move_to([-1.5, 1.2, 0])
+        equals = mono("=", 40).set_color(MUTED).move_to([0.0, 1.2, 0])
         result = VGroup(
             mono("密文数字", 25).set_color(CIPHER),
             mono("59", 52).set_color(CIPHER),
-        ).arrange(DOWN, buff=0.25).move_to([1.55, 0.7, 0])
-        line = Line([-5.3, -0.25, 0], [3.2, -0.25, 0], color=MUTED, stroke_width=1.5)
-        note = ui("每个位置都用一枚循环密钥", 25).set_color(MUTED).move_to([0, -0.75, 0])
+        ).arrange(DOWN, buff=0.25).move_to([1.55, 1.2, 0])
+        line = Line([-5.3, 0.25, 0], [3.2, 0.25, 0], color=MUTED, stroke_width=1.5)
+        note = ui("每个位置都用一枚循环密钥", 25).set_color(MUTED).move_to([0, -0.25, 0])
 
         self.say("先把明文和密钥都查成两位坐标")
         self.play(FadeIn(left), FadeIn(plus), FadeIn(middle))
@@ -224,27 +210,24 @@ class NihilistArithmetic(Narrated):
             mono("35", 42).set_color(GOLD),
             mono("=", 38).set_color(MUTED),
             mono("24", 42).set_color(OK),
-        ).arrange(RIGHT, buff=0.22).move_to(DOWN * 1.65)
+        ).arrange(RIGHT, buff=0.22).move_to(DOWN * 1.15)
         self.say("解密就反过来：减掉同一枚密钥，再回方阵查字母")
         self.play(FadeIn(decrypt, shift=UP * 0.15))
         self.wait(1.6)
         self.hush()
-        self.play(FadeOut(VGroup(title, left, plus, middle, equals, result, line, note, decrypt)))
+        self.play(FadeOut(VGroup(left, plus, middle, equals, result, line, note, decrypt)))
 
 
 class NihilistWrongKey(Narrated):
     """用 AROUSAL 解密，显出两个越界坐标。"""
 
     def construct(self):
-        title = header("第一次解密：AROUSAL", "减法结果必须能回到 5 × 5 方阵")
-        self.play(FadeIn(title, shift=DOWN * 0.15))
-
         square, cells = make_square(0.58)
-        square.move_to([-4.25, -0.10, 0])
+        square.move_to([-4.25, 0.40, 0])
         caption = grid_caption(square, "有效坐标：11、12、…、55")
         self.play(FadeIn(square), FadeIn(caption))
 
-        ys = [2.15, 1.45, 0.75, 0.05]
+        ys = [2.65, 1.95, 1.25, 0.55]
         ct = number_strip(CIPHERTEXT, ys[0], CIPHER)
         key = key_strip(WRONG_KEY, ys[1], GOLD)
         diffs = number_strip(WRONG_DIFFS, ys[2], FG)
@@ -271,7 +254,7 @@ class NihilistWrongKey(Narrated):
             if WRONG_RESULT[i] is None:
                 self.play(Circumscribe(diffs[i], color=DANGER, time_width=0.7), run_time=0.45)
 
-        error = chip("61、65 不在方阵坐标里", DANGER, 23).move_to([2.7, -1.12, 0])
+        error = chip("61、65 不在方阵坐标里", DANGER, 23).move_to([2.7, -0.62, 0])
         self.say("结果出现 61 和 65：它们根本不是合法的行列坐标")
         self.play(FadeIn(error, shift=UP * 0.15))
         self.wait(1.4)
@@ -282,22 +265,19 @@ class NihilistWrongKey(Narrated):
         self.play(Create(cross))
         self.wait(1.2)
         self.hush()
-        self.play(FadeOut(VGroup(title, square, caption, labels, ct, key, diffs, output, error, cross)))
+        self.play(FadeOut(VGroup(square, caption, labels, ct, key, diffs, output, error, cross)))
 
 
 class NihilistCorrectKey(Narrated):
     """删除第二个 A 后，所有坐标都能查回方阵。"""
 
     def construct(self):
-        title = header("第二次解密：删除第二个 A", "AROUSAL → AROUSL")
-        self.play(FadeIn(title, shift=DOWN * 0.15))
-
         square, cells = make_square(0.58)
-        square.move_to([-4.25, -0.10, 0])
+        square.move_to([-4.25, 0.40, 0])
         caption = grid_caption(square, "每个差值都能查回一个字母")
         self.play(FadeIn(square), FadeIn(caption))
 
-        ys = [2.15, 1.45, 0.75, 0.05]
+        ys = [2.65, 1.95, 1.25, 0.55]
         ct = number_strip(CIPHERTEXT, ys[0], CIPHER)
         key = key_strip(RIGHT_KEY, ys[1], GOLD)
         diffs = number_strip(RIGHT_DIFFS, ys[2], FG)
@@ -323,7 +303,7 @@ class NihilistCorrectKey(Narrated):
                 run_time=0.34,
             )
 
-        answer = mono(RIGHT_EXPECTED, 36).set_color(OK).move_to([1.7, -1.20, 0])
+        answer = mono(RIGHT_EXPECTED, 36).set_color(OK).move_to([1.7, -0.70, 0])
         self.say("这次每一个差值都能回到方阵，读出 JUSTENGAGEWTH")
         self.play(TransformFromCopy(output, answer), run_time=1.5)
         self.wait(1.2)
@@ -332,10 +312,10 @@ class NihilistCorrectKey(Narrated):
             mono("JUST ENGAGE W", 27).set_color(FG),
             mono("I", 27).set_color(DANGER),
             mono("TH", 27).set_color(FG),
-        ).arrange(RIGHT, buff=0.03).move_to([1.55, -2.05, 0])
+        ).arrange(RIGHT, buff=0.03).move_to([1.55, -1.55, 0])
         note = ui("I 被方阵规则省略，所以 WITH 读成 WTH", 21).set_color(MUTED).next_to(phrase, DOWN, buff=0.16)
         self.say("最后的 I 也解释了：它正是被 5 × 5 方阵省略的字母", wait=1.8)
         self.play(FadeIn(phrase), FadeIn(note))
         self.wait(2.0)
         self.hush()
-        self.play(FadeOut(VGroup(title, square, caption, labels, ct, key, diffs, output, answer, phrase, note)))
+        self.play(FadeOut(VGroup(square, caption, labels, ct, key, diffs, output, answer, phrase, note)))
